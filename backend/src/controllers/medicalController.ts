@@ -152,7 +152,7 @@ export const getAnalysisDetails = async (req: Request, res: Response) => {
         });
     } catch (error) {
         logger.error({ id, err: error }, 'Failed to fetch analysis details');
-        return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+        return res.status(500).json({ status: 'error', message: 'ERROR_MEDICAL_DETAILS' });
     }
 };
 
@@ -160,72 +160,52 @@ export const getAnalysisDetails = async (req: Request, res: Response) => {
 export const getAnalysisExport = async (req: Request, res: Response) => {
     const { id } = req.params;
     const doctorId = req.user.id;
-    const startTime = Date.now();
-
-    // CRITICAL: Noise log to verify hit and param capture
-    console.warn(`[DIAGNOSTIC] EXPORT_HIT: ID=${id}, DOCTOR=${doctorId}, PATH=${req.path}`);
-    logger.warn({ id, doctorId, traceId: req.headers['x-trace-id'] }, 'Diagnostic: Export controller invoked');
 
     try {
         const note = await prisma.clinicalNote.findFirst({
-            where: { id, doctorId },
+            where: { id: id as string, doctorId },
             include: {
-                doctor: {
-                    select: { name: true, email: true }
-                },
+                doctor: { select: { name: true, email: true } },
                 patientContext: true,
-                predictions: {
-                    orderBy: { createdAt: 'desc' as any },
-                    take: 1
-                }
+                predictions: { orderBy: { createdAt: 'desc' as any }, take: 1 }
             }
         });
 
         if (!note) {
-            return res.status(404).json({ status: 'error', message: 'Analysis record not found' });
+            return res.status(404).json({ status: 'error', message: 'Analysis record not found in clinician archive.' });
         }
 
         // Audit Logging for medical data export
-        logger.info({
-            id,
-            doctorId,
-            action: 'DATA_EXPORT',
-            timestamp: new Date().toISOString()
-        }, 'Clinician initiated diagnostic report export');
+        logger.info({ id, doctorId, action: 'DATA_EXPORT' }, 'Clinician initiated diagnostic report export');
 
         const latestPrediction = (note as any).predictions[0] || null;
-
         const reportData = {
             reportTitle: "ClinicaEye-NLP - Clinical Analysis Report",
             id: note.id,
             generatedAt: new Date().toISOString(),
             authenticityKey: `SYS-${(id as string).substring(0, 6)}-VAL-CLINICA`,
             doctor: {
-                name: (note as any).doctor.name,
-                email: (note as any).doctor.email
+                name: (note as any).doctor?.name || "Unassigned",
+                email: (note as any).doctor?.email || "Unassigned"
             },
             patient: {
-                ageRange: note.patientContext.ageRange || "N/A",
-                gender: note.patientContext.gender || "N/A",
-                medicalHistory: note.patientContext.medicalHistory || []
+                ageRange: (note as any).patientContext?.ageRange || "N/A",
+                gender: (note as any).patientContext?.gender || "N/A",
+                medicalHistory: (note as any).patientContext?.medicalHistory || []
             },
             clinicalNote: {
                 text: note.rawText,
                 createdAt: note.createdAt
             },
             aiAnalysis: latestPrediction ? {
-                labels: latestPrediction.predictedLabels,
-                confidence: latestPrediction.confidenceScores,
-                latency: latestPrediction.inferenceTimeMs,
+                labels: latestPrediction.predictedLabels || [],
+                confidence: latestPrediction.confidenceScores || {},
+                latency: latestPrediction.inferenceTimeMs || 0,
                 xai: (latestPrediction as any).explanation || []
             } : null
         };
 
-        return res.status(200).json({
-            status: 'success',
-            data: reportData
-        });
-
+        return res.status(200).json({ status: 'success', data: reportData });
     } catch (error) {
         logger.error({ id, err: error }, 'Failed to process analysis export');
         return res.status(500).json({ status: 'error', message: 'Internal Server Error' });

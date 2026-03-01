@@ -22,34 +22,9 @@ app.use(cors());
 app.use(express.json());
 app.use(pinoHttp({ logger }));
 
-// Health Check Endpoint
+// Basic Health Endpoint
 app.get('/health', async (req: Request, res: Response) => {
-    const health: any = { status: 'UP', timestamp: Date.now() };
-
-    // 1. Check MongoDB (Prisma)
-    try {
-        await prisma.$runCommandRaw({ ping: 1 });
-        health.database = 'UP';
-    } catch (error) {
-        health.status = 'DOWN';
-        health.database = 'DOWN';
-        logger.error({ err: error }, 'MongoDB Health Check Failed');
-    }
-
-    // 2. Check AI Service (FastAPI)
-    const aiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-    try {
-        const aiRes = await axios.get(`${aiUrl}/health`, { timeout: 1000 });
-        health.ai_service = aiRes.status === 200 ? 'UP' : 'DOWN';
-        if (health.ai_service === 'DOWN') health.status = 'DOWN';
-    } catch (error) {
-        health.status = 'DOWN';
-        health.ai_service = 'DOWN';
-        logger.error({ err: error }, 'AI Service Health Check Failed');
-    }
-
-    const statusCode = health.status === 'UP' ? 200 : 503;
-    res.status(statusCode).json(health);
+    res.json({ status: 'UP', service: 'ClinicaEye-Backend' });
 });
 
 // Auth Endpoints

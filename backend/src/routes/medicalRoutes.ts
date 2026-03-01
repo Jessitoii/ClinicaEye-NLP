@@ -7,12 +7,10 @@ import { analyzeRequestSchema } from '../validations/analyzeSchema';
 
 const router = Router();
 
-// GET /api/v1/ping - Diagnostic connectivity check
-router.get('/ping', (req, res) => res.json({ status: 'pong', timestamp: new Date().toISOString() }));
-
 // --- Clinical Analysis Endpoints ---
 
-// GET /api/v1/analyze/:id/export - Official Export Data (Ordered before any other /analyze route)
+// GET /api/v1/analyze/:id/export - Official Export Data
+// requireAuth is RESTORED now that zombie processes are gone
 router.get('/analyze/:id/export', requireAuth, getAnalysisExport);
 
 // POST /api/v1/analyze - Submission
@@ -29,10 +27,13 @@ router.get('/analyze/:id', requireAuth, getAnalysisDetails);
 
 // --- History & Metadata ---
 
-// /api/v1/history - List
+// GET /api/v1/history - List
 router.get('/history', requireAuth, getHistory);
 
-// /api/v1/profile
+// GET /api/v1/profile
 router.get('/profile', requireAuth, getProfile);
+
+// Diagnostic Ping
+router.get('/ping', (req, res) => res.json({ status: 'pong', timestamp: new Date().toISOString() }));
 
 export default router;
