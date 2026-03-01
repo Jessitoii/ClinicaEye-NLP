@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { predict, getHistory, getProfile, getAnalysisDetails, getAnalysisExport } from '../controllers/medicalController';
+import { predict, getHistory, getProfile, getAnalysisDetails, getAnalysisExport, exportAnalysisPDF } from '../controllers/medicalController';
 import { analyzeClinicalText } from '../controllers/analysisController';
 import { requireAuth } from '../middlewares/authMiddleware';
 import { validateRequest, phiScrubber } from '../middlewares/validationMiddleware';
@@ -12,6 +12,9 @@ const router = Router();
 // GET /api/v1/analyze/:id/export - Official Export Data
 // requireAuth is RESTORED now that zombie processes are gone
 router.get('/analyze/:id/export', requireAuth, getAnalysisExport);
+
+// POST /api/v1/analyze/:id/export-pdf - SSG PDF Generation
+router.post('/analyze/:id/export-pdf', requireAuth, exportAnalysisPDF);
 
 // POST /api/v1/analyze - Submission
 router.post(

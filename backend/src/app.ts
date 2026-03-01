@@ -13,6 +13,15 @@ import medicalRoutes from './routes/medicalRoutes';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 
+// --- MISSION CRITICAL ENV CHECK ---
+const REQUIRED_ENV = ['DATABASE_URL', 'JWT_SECRET'];
+REQUIRED_ENV.forEach((key) => {
+    if (!process.env[key]) {
+        console.error(`[FATAL] Missing required environment variable: ${key}`);
+        process.exit(1);
+    }
+});
+
 const app = express();
 const prisma = new PrismaClient();
 
