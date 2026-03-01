@@ -1,0 +1,23 @@
+# Python Environment
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Models & Checkpoints
+ai/models/checkpoints/
+*.safetensors
+*.bin
+*.h5
+*.pt
+*.onnx
+
+# Allow final_model directory structure but ignore massive binaries
+ai/models/final_model/**/*
+!ai/models/final_model/.gitkeep
+
+# Logs & Scripts
+logs/
+*.log

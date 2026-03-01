@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.*
+prisma/*.sqlite
+prisma/*.lock
+prisma/migrations/
+!.env.example

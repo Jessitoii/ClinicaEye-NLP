@@ -1,0 +1,7 @@
+﻿
+> backend@1.0.0 npx
+> tsc --noEmit
+
+error TS6059: File 'D:/Software/ClinicaEye-NLP/backend/prisma/seed.ts' is not under 'rootDir' 'D:/Software/ClinicaEye-NLP/backend/src'. 'rootDir' is expected to contain all source files.
+  The file is in the program because:
+    Matched by include pattern 'prisma/**/*' in 'D:/Software/ClinicaEye-NLP/backend/tsconfig.json'

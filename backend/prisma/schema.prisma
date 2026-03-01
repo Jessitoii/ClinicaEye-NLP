@@ -1,0 +1,55 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Doctor {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  email     String         @unique
+  password  String         
+  name      String
+  notes     ClinicalNote[]
+}
+
+model PatientContext {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  ageRange        String?        // e.g., "40-50" (De-identified)
+  gender          String?
+  medicalHistory  String[]       // Known prior conditions
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  clinicalNotes   ClinicalNote[]
+}
+
+model ClinicalNote {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  patientContextId String       @db.ObjectId
+  doctorId         String       @db.ObjectId
+  rawText          String       // Required: Medical text (Kaggle or Eye-QA)
+  source           String       // "Kaggle", "Eye-QA", "Direct_Input"
+  
+  patientContext   PatientContext @relation(fields: [patientContextId], references: [id])
+  doctor           Doctor         @relation(fields: [doctorId], references: [id])
+  predictions      Prediction[]
+  
+  createdAt        DateTime     @default(now())
+}
+
+model Prediction {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  clinicalNoteId   String       @db.ObjectId
+  
+  predictedLabels  String[]     // ["Glaucoma", "Diabetic Retinopathy"]
+  confidenceScores Json         // { "Glaucoma": 0.89, "Diabetic Retinopathy": 0.22 }
+  inferenceTimeMs  Int          // Tracked for <2s latency SLA
+  explanation      Json?        // XAI metadata: [{word: string, importance: number}]
+  
+  clinicalNote     ClinicalNote @relation(fields: [clinicalNoteId], references: [id])
+  
+  createdAt        DateTime     @default(now())
+}
