@@ -1,0 +1,16 @@
+# Core Engines: Deep Learning and Model Optimization
+torch
+transformers
+accelerate
+
+# Server & API: high-performance inference engine
+fastapi
+uvicorn
+
+# Data & Metrics: processing and medical auditing (F1 calculation)
+pandas
+pyarrow
+scikit-learn
+
+# XAI: explainability for clinical word-importance highlights
+captum

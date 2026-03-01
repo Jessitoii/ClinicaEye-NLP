@@ -32,3 +32,5 @@ build/
 .gemini/
 .antigravity/
 .codex/
+
+Data/

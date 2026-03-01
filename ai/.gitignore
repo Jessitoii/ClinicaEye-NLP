@@ -21,3 +21,5 @@ ai/models/final_model/**/*
 # Logs & Scripts
 logs/
 *.log
+
+models/
