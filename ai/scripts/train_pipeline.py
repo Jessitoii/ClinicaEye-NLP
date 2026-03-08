@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score, precision_score, recall_score
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -15,6 +14,9 @@ from transformers import (
     EarlyStoppingCallback,
     EvalPrediction
 )
+from sklearn.metrics import f1_score, precision_score, recall_score, average_precision_score
+from captum.attr import LayerIntegratedGradients
+import torch.nn.functional as F
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -38,12 +40,148 @@ def compute_metrics(p: EvalPrediction):
     precision = precision_score(y_true, y_pred, average='macro', zero_division=0)
     recall = recall_score(y_true, y_pred, average='macro', zero_division=0)
     
+    # AUPRC is more honest for imbalanced medical data
+    auprc = average_precision_score(y_true, probs.numpy(), average='macro')
+    
     return {
         "f1_micro": f1_micro,
         "f1_macro": f1_macro,
         "precision_macro": precision,
-        "recall_macro": recall
+        "recall_macro": recall,
+        "auprc": auprc
     }
+
+class FocalLossTrainer(Trainer):
+    """
+    Subclassed Trainer implementing Focal Loss for multi-label classification.
+    Handles class imbalance by focusing on hard-to-classify examples.
+    """
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None, **kwargs):
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits # No Sugarcoating: Direct attribute access to avoid AttributeError
+        
+        # Focal Loss: FL(pt) = -(1-pt)^gamma * log(pt)
+        # We treat multi-label as multiple binary tasks
+        gamma = 2.0
+        bce_loss = F.binary_cross_entropy_with_logits(logits, labels, reduction='none')
+        pt = torch.exp(-bce_loss)
+        focal_loss = ((1 - pt) ** gamma * bce_loss).mean()
+        
+        return (focal_loss, outputs) if return_outputs else focal_loss
+
+class XAIExplainer:
+    """
+    XAI Module using Captum's LayerIntegratedGradients for word-level importance visualization.
+    """
+    def __init__(self, model, tokenizer):
+        self.model = model.eval()
+        self.tokenizer = tokenizer
+        
+        # Wrapper for Captum compatibility (HF SequenceClassifierOutput -> Raw Tensor)
+        def model_forward(input_ids, attention_mask=None):
+            if attention_mask is not None:
+                outputs = self.model(input_ids, attention_mask=attention_mask)
+            else:
+                outputs = self.model(input_ids)
+            
+            # Robust extraction of logits
+            if hasattr(outputs, "logits"):
+                return outputs.logits
+            return outputs
+
+        # BioBERT uses 'bert' as attribute; we target the base embeddings
+        self.lig = LayerIntegratedGradients(model_forward, self.model.bert.embeddings)
+
+    def explain(self, text, target_class_idx):
+        device = next(self.model.parameters()).device
+        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512).to(device)
+        input_ids = inputs["input_ids"]
+        
+        # Define baseline ([PAD] tokens) to contrast against empty sequence context
+        baseline = torch.full_like(input_ids, self.tokenizer.pad_token_id)
+
+        # Pass attention_mask to preserve inference context
+        attributions, delta = self.lig.attribute(
+            inputs=input_ids,
+            baselines=baseline,
+            target=target_class_idx,
+            additional_forward_args=(inputs["attention_mask"],),
+            return_convergence_delta=True
+        )
+
+        # Summarize across embedding dimensions
+        attributions = attributions.sum(dim=-1).squeeze(0)
+        
+        # --- Sparsity & Peak Enhancement ---
+        # 1. Rectify: Focus only on positive contribution (Evidence FOR pathology)
+        attributions = torch.clamp(attributions, min=0)
+        
+        # 2. Reverted Scaling: score^1.2 to avoid over-amplification of noise
+        attributions = torch.pow(attributions, 1.2)
+        
+        tokens = self.tokenizer.convert_ids_to_tokens(input_ids[0])
+        attr_list = attributions.tolist()
+
+        # Step 1: Merge Subwords (BERT ## tokens)
+        merged_results = []
+        for token, score in zip(tokens, attr_list):
+            if token in ["[CLS]", "[SEP]", "[PAD]"]:
+                continue
+            
+            if token.startswith("##") and merged_results:
+                # Merge with previous word
+                merged_results[-1]["word"] += token[2:]
+                # Aggregate score: Max usually works best for highlighting the whole word
+                merged_results[-1]["score"] = max(merged_results[-1]["score"], score)
+            else:
+                merged_results.append({"word": token, "score": score})
+
+        # Step 2: Noise Damping & Clinical Boosting
+        import re
+        noise_pattern = re.compile(r'^[0-9\W]+$')
+        stop_words = {"a", "the", "is", "of", "and", "in", "to", "it", "was", "for", "on", "as", "with", "at", "by", "this", "be", "that"}
+        critical_roots = ["retin", "tear", "flash", "float", "cloud", "blur", "loss", "pain", "itch", "red", "swollen"]
+        
+        importance_scores = []
+        for item in merged_results:
+            word = item["word"]
+            score = item["score"]
+            word_clean = word.lower()
+            
+            # Dampen noise
+            if noise_pattern.match(word_clean):
+                 score *= 0.05 
+            if word_clean in stop_words:
+                score *= 0.001 
+            
+            # Boost clinical symbols
+            if any(root in word_clean for root in critical_roots):
+                score *= 2.5 
+            
+            # Boost Disease Classes
+            if any(cls.split()[0].lower() in word_clean for cls in DISEASE_CLASSES):
+                score *= 2.0
+
+            # Diagnostic logging for clinical keywords
+            if any(x in word_clean for x in ["retin", "tear", "flash"]):
+                print(f"XAI_AUDIT_LOG: Word '{word}' Final_Score={score:.6f}")
+
+            importance_scores.append({"word": word, "score": float(score)})
+        
+        if not importance_scores:
+            return []
+
+        # Step 3: Min-Max Normalization
+        scores = [r["score"] for r in importance_scores]
+        max_s = max(scores)
+        min_s = min(scores)
+        range_s = (max_s - min_s) if (max_s - min_s) > 1e-9 else 1.0
+
+        for item in importance_scores:
+            item["score"] = float((item["score"] - min_s) / range_s)
+            
+        return importance_scores
 
 class MultiLabelDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
@@ -136,7 +274,7 @@ def main(args):
         report_to="none" # Keeping it clean
     )
     
-    trainer = Trainer(
+    trainer = FocalLossTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,

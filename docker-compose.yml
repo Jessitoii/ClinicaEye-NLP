@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: clinicaeye_frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - clinicaeye-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: clinicaeye_backend
+    ports:
+      - "5000:5000"
+    networks:
+      - clinicaeye-net
+    depends_on:
+      ai-service:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      # Explicitly override the AI service URL for container-to-container communication
+      - AI_SERVICE_URL=http://ai-service:8000/api/v1
+      - PORT=5000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"] # Path matches the actual /health route
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  ai-service:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: clinicaeye_ai
+    ports:
+      - "8000:8000"
+    networks:
+      - clinicaeye-net
+    volumes:
+      # Mount models folder dynamically to prevent them from increasing image size
+      - ./ai/models:/app/models
+    healthcheck:
+      # Check the root or /health path where FastAPI is running
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  clinicaeye-net:
+    driver: bridge

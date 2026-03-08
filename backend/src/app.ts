@@ -7,7 +7,6 @@ import { logger } from './utils/logger';
 import { analyzeRequestSchema } from './validations/analyzeSchema';
 import { validateRequest, phiScrubber } from './middlewares/validationMiddleware';
 import { requireAuth } from './middlewares/authMiddleware';
-import { analyzeClinicalText } from './controllers/analysisController';
 import authRoutes from './routes/authRoutes';
 import medicalRoutes from './routes/medicalRoutes';
 import { PrismaClient } from '@prisma/client';

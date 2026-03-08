@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 
-export const analyzeClinicalText = async (req: Request, res: Response) => {
+export const analyzeClinicalNote = async (req: Request, res: Response) => {
     const { text, patientContext } = req.body;
     const traceId = req.headers['x-trace-id'] || `req-${Date.now()}`;
     const startTime = Date.now();
@@ -84,13 +84,13 @@ export const analyzeClinicalText = async (req: Request, res: Response) => {
                 predictionId: prediction.id,
                 labels: prediction.predictedLabels,
                 confidence: prediction.confidenceScores,
-                highlightZones: aiResult.data.highlightZones,
+                highlight_zones: aiResult.data.highlightZones,
                 latency: prediction.inferenceTimeMs
             }
         });
 
     } catch (error) {
-        logger.error({ traceId, err: error }, 'Internal failure in analyzeClinicalText');
+        logger.error({ traceId, err: error }, 'Internal failure in analyzeClinicalNote');
         return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
 };

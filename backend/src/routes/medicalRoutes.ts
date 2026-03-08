@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { predict, getHistory, getProfile, getAnalysisDetails, getAnalysisExport, exportAnalysisPDF } from '../controllers/medicalController';
-import { analyzeClinicalText } from '../controllers/analysisController';
+import { getHistory, getProfile, getAnalysisDetails, getAnalysisExport, exportAnalysisPDF } from '../controllers/medicalController';
+import { analyzeClinicalNote } from '../controllers/analysisController';
 import { requireAuth } from '../middlewares/authMiddleware';
 import { validateRequest, phiScrubber } from '../middlewares/validationMiddleware';
 import { analyzeRequestSchema } from '../validations/analyzeSchema';
@@ -22,7 +22,7 @@ router.post(
     requireAuth,
     validateRequest(analyzeRequestSchema),
     phiScrubber,
-    analyzeClinicalText
+    analyzeClinicalNote
 );
 
 // GET /api/v1/analyze/:id - Details

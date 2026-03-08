@@ -17,13 +17,18 @@ interface FastAPIPrediction {
     probability: number;
 }
 
+interface ClassExplanation {
+    disease_class: string;
+    explanations: Array<{ word: string; score: number }>;
+}
+
 interface FastAPIStandardResponse {
     status: string;
     data: {
         id: string;
         text: string;
         predictions: FastAPIPrediction[];
-        highlight_zones?: Array<{ word: string; importance: number }>;
+        highlight_zones?: ClassExplanation[];
     };
     message?: string;
 }
@@ -40,7 +45,7 @@ export class AIGatewayService {
         try {
             // We use a short timeout because the model MUST be fast. Message queues are not used here.
             const response = await axios.post<FastAPIStandardResponse>(
-                `${AI_SERVICE_URL}/predict`,
+                `${AI_SERVICE_URL}/analyze?explain=true`,
                 { text },
                 { timeout: AI_TIMEOUT_MS }
             );
@@ -55,8 +60,7 @@ export class AIGatewayService {
 
             const confidenceScores: Record<string, number> = {};
             const predictedLabels: string[] = [];
-            const highlightZones = raw.data.highlight_zones || [];
-
+            
             if (Array.isArray(raw.data.predictions)) {
                 raw.data.predictions.forEach((p) => {
                     confidenceScores[p.class] = p.probability;
@@ -66,8 +70,33 @@ export class AIGatewayService {
                 });
             }
 
+            const highlightZones: Array<{ word: string; importance: number }> = [];
+            const highlightZonesRaw = raw.data.highlight_zones;
+
+            if (Array.isArray(highlightZonesRaw) && highlightZonesRaw.length > 0) {
+                const firstExplanations = highlightZonesRaw[0].explanations;
+                if (Array.isArray(firstExplanations)) {
+                    // For each word in the sequence
+                    firstExplanations.forEach((_, tokenIdx) => {
+                        const word = firstExplanations[tokenIdx].word;
+                        let maxScore = 0;
+
+                        // Find the max score for THIS index across all disease types
+                        highlightZonesRaw.forEach((classHz: any) => {
+                            if (classHz.explanations && classHz.explanations[tokenIdx]) {
+                                maxScore = Math.max(maxScore, classHz.explanations[tokenIdx].score);
+                            }
+                        });
+
+                        highlightZones.push({ word, importance: maxScore });
+                    });
+                }
+            }
+
+
+
             const inferenceTimeMs = Date.now() - startTime;
-            logger.info({ inferenceTimeMs, labelsCount: predictedLabels.length }, 'Successfully retrieved AI prediction');
+            logger.info({ inferenceTimeMs, labelsCount: predictedLabels.length, zonesCount: highlightZones.length }, 'Successfully retrieved AI prediction');
 
             return {
                 data: {

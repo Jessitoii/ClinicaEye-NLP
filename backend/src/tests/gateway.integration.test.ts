@@ -57,7 +57,7 @@ describe('AI Gateway & Endpoints Integration', () => {
     it('POST /analyze enforces <2s constraint and returns 503 on timeout (Fail-Open)', async () => {
         // Mock FastAPI taking longer than the 1500ms budget
         nock(AI_URL)
-            .post('/predict')
+            .post('/analyze')
             .delayConnection(2000)
             .reply(200, {
                 predictedLabels: ['Normal'],

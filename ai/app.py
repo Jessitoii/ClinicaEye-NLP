@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 import uvicorn
 from transformers import AutoTokenizer, BertForSequenceClassification
-from captum.attr import LayerIntegratedGradients
+from scripts.train_pipeline import XAIExplainer
 
 # No Sugarcoating: Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -57,16 +57,13 @@ try:
     model.to(device)
     model.eval()
     
-    # Captum wrapper: Transformers models return SequenceClassifierOutput, but Captum needs a Tensor of logits.
-    def forward_func(input_ids):
-        return model(input_ids).logits
-
-    # Initialize Captum for XAI
-    lig = LayerIntegratedGradients(forward_func, model.bert.embeddings)
+    # Initialize XAIExplainer
+    explainer = XAIExplainer(model, tokenizer)
 except Exception as e:
     logger.error(f"CRITICAL: Failed to load model weights. Have you completed the training yet? Error: {e}")
     model = None
     tokenizer = None
+    explainer = None
 
 # ----------------- UTILS -----------------
 def clean_text(text: str) -> str:
@@ -93,16 +90,20 @@ def sigmoid(x):
 class PredictRequest(BaseModel):
     text: str
 
-class PredictionResult(BaseModel):
-    disease: str
-    confidence: float
+class Explanation(BaseModel):
+    word: str
+    score: float
+
+class ClassExplanation(BaseModel):
+    disease_class: str
+    explanations: List[Explanation]
 
 class PredictResponse(BaseModel):
     id: str
     text: str
     latency_ms: float
     predictions: List[Dict]
-    highlight_zones: List[Dict]
+    highlight_zones: List[ClassExplanation]
 
 # API Wrapper (Standardized for Frontend)
 class StandardResponse(BaseModel):
@@ -113,6 +114,7 @@ class StandardResponse(BaseModel):
 
 # ----------------- ENDPOINTS -----------------
 @app.post("/api/v1/predict", response_model=StandardResponse)
+@app.post("/api/v1/analyze", response_model=StandardResponse)
 async def predict(request: PredictRequest, explain: bool = Query(False)):
     start_time = time.time()
     
@@ -133,8 +135,9 @@ async def predict(request: PredictRequest, explain: bool = Query(False)):
         
         with torch.no_grad():
             outputs = model(**inputs)
-            logits = outputs.logits.cpu().numpy()[0]
-            probs = sigmoid(logits)
+            # Standard: Access .logits BEFORE any tensor operations
+            logits = outputs.logits
+            probs = torch.sigmoid(logits).cpu().numpy()[0]
             
         predictions = []
         for i, cls in enumerate(DISEASE_CLASSES):
@@ -142,37 +145,34 @@ async def predict(request: PredictRequest, explain: bool = Query(False)):
             
         # XAI logic
         highlight_zones = []
-        if explain:
-            # We use Captum for Word Importance
-            # Note: This is computationally more expensive but integrated here for visibility.
-            # We take the max class or just general attribution? Usually, we attribute for the positive classes.
-            # For simplicity, we attribute for the combined max logit or highest probability class.
-            target_idx = int(np.argmax(logits))
+        logger.info(f"AI_EXPLAIN_REQUESTED: {explain}")
+        
+        if explain and explainer:
+            # First, check classes > threshold
+            for i, p in enumerate(probs):
+                if p >= 0.5:
+                    importance_scores = explainer.explain(cleaned, i)
+                    if importance_scores:
+                        highlight_zones.append({
+                            "disease_class": DISEASE_CLASSES[i],
+                            "explanations": [Explanation(**item) for item in importance_scores]
+                        })
             
-            # Simple baseline: all zeros
-            input_ids = inputs['input_ids']
-            baseline = torch.zeros_like(input_ids)
-            
-            attributions, _ = lig.attribute(
-                inputs=input_ids,
-                baselines=baseline,
-                target=target_idx,
-                return_convergence_delta=True
-            )
-            
-            # Summarize attribution per token
-            attributions = attributions.sum(dim=-1).squeeze(0)
-            attributions = attributions / torch.norm(attributions) # Normalize
-            
-            attr_np = attributions.cpu().detach().numpy()
-            tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
-            
-            for token, importance in zip(tokens, attr_np):
-                if token in ["[CLS]", "[SEP]", "[PAD]"]:
-                    continue
-                highlight_zones.append({"word": token, "importance": float(importance)})
+            # Additional Safeguard: If no class > 0.5 but requested, explain the max class
+            if not highlight_zones:
+                max_idx = int(np.argmax(probs)) # Use probs, not logits tensor here
+                logger.info(f"FALLBACK_EXPLAIN: No class > 0.5. Explaining max class: {DISEASE_CLASSES[max_idx]}")
+                importance_scores = explainer.explain(cleaned, max_idx)
+                if importance_scores:
+                    highlight_zones.append({
+                        "disease_class": DISEASE_CLASSES[max_idx],
+                        "explanations": [Explanation(**item) for item in importance_scores]
+                    })
+                else:
+                    logger.warning("FALLBACK_EXPLAIN_FAILED: Explainer returned empty results.")
 
         latency = (time.time() - start_time) * 1000
+        logger.info(f"PREDICTION_COMPLETE: Latency={latency:.2f}ms, Highlights={len(highlight_zones)}")
         
         response_data = {
             "id": str(uuid.uuid4()),
@@ -193,11 +193,10 @@ async def predict(request: PredictRequest, explain: bool = Query(False)):
         
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
-        return {
-            "status": "error",
-            "message": f"Inference engine failure: {str(e)}",
-            "metadata": {"latency_ms": (time.time() - start_time) * 1000, "request_id": str(uuid.uuid4())}
-        }
+        raise HTTPException(
+            status_code=500,
+            detail=f"Inference engine failure: {str(e)}"
+        )
 
 @app.get("/health")
 async def health():
