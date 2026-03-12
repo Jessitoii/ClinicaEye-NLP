@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { logger } from '../utils/logger';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000/api/v1';
-const AI_TIMEOUT_MS = 1500; // Strict <2s constraint budget
+const AI_TIMEOUT_MS = 10000; // Increased constraint budget for CPU inference
 
 export interface AIResponse {
     predictedLabels: string[]; // Classes where probability > threshold
@@ -112,7 +112,7 @@ export class AIGatewayService {
 
             if (axios.isAxiosError(error)) {
                 if (error.code === 'ECONNABORTED') {
-                    logger.error({ inferenceTimeMs }, 'AI Service Timeout: Inference took longer than 1500ms limit.');
+                    logger.error({ inferenceTimeMs }, 'AI Service Timeout: Inference took longer than 10000ms limit.');
                     throw new Error('AI_SERVICE_TIMEOUT');
                 }
                 logger.error({ err: error.message }, 'Failed to reach AI Service');
