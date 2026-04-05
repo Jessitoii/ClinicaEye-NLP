@@ -49,6 +49,11 @@ model Prediction {
   inferenceTimeMs  Int          // Tracked for <2s latency SLA
   explanation      Json?        // XAI metadata: [{word: string, importance: number}]
   
+  // Multimodal Vision Integration
+  imageUrl         String?
+  visualResults    Json?        // ODIR results + Grad-CAM base64 heatmap
+  isMultimodal     Boolean      @default(false)
+  
   clinicalNote     ClinicalNote @relation(fields: [clinicalNoteId], references: [id])
   
   createdAt        DateTime     @default(now())

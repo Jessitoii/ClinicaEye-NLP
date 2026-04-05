@@ -9,7 +9,8 @@ export const validateRequest = (schema: ZodSchema) => {
             next();
         } catch (error) {
             if (error instanceof ZodError) {
-                const zodErr = error as any;
+                const zodErr = error as ZodError;
+                console.error("[VALIDATION_ERROR] Zod validation failed for " + req.path + ":", JSON.stringify(zodErr.issues, null, 2));
                 logger.warn({ path: req.path, errors: zodErr.issues }, 'Validation error');
                 return res.status(400).json({ status: 'error', errors: zodErr.issues });
             }

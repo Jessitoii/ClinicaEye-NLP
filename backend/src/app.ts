@@ -25,10 +25,24 @@ const app = express();
 const prisma = new PrismaClient();
 
 // Middlewares
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images to be loaded from other origins (frontend)
+    contentSecurityPolicy: { // Relax CSP for static assets if needed
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "blob:", "*"],
+        },
+    },
+}));
 app.use(cors());
 app.use(express.json());
 app.use(pinoHttp({ logger }));
+
+import path from 'path';
+
+// Serve Static Assets (Uploaded Fundus Images)
+const uploadDir = path.join(process.cwd(), 'public/uploads');
+app.use('/uploads', express.static(uploadDir));
 
 // Basic Health Endpoint
 app.get('/health', async (req: Request, res: Response) => {

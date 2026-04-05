@@ -14,17 +14,27 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastLatency, setLastLatency] = useState<number | null>(null);
 
-  const handleSubmit = async (text: string) => {
+  const handleSubmit = async (text: string, file: File | null) => {
     setIsLoading(true);
     try {
-      const response = await submitClinicalNote(text);
+      const formData = new FormData();
+      // Ensure text is never truly empty to simplify AI logic
+      const safeText = text.trim() || "System: Clinically Empty (Multimodal Only)";
+      formData.append("text", safeText);
+      
+      // Only append if file exists to satisfy Multer boundaries (omit key entirely otherwise)
+      if (file) {
+        formData.append("image", file);
+      }
+
+      const response = await submitClinicalNote(formData);
       setLastLatency(response.latency_ms || null);
 
       // Stash response for the analysis view
       sessionStorage.setItem(`inference_${response.id}`, JSON.stringify(response));
       router.push(`/analysis/${response.id}`);
     } catch (error) {
-      console.error(error);
+      console.error("ANALYSIS_SUBMISSION_FAILED:", error);
     } finally {
       setIsLoading(false);
     }

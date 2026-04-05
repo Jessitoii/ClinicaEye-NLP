@@ -6,11 +6,34 @@ import { logger } from '../utils/logger';
 const prisma = new PrismaClient();
 
 export const analyzeClinicalNote = async (req: Request, res: Response) => {
-    const { text, patientContext } = req.body;
-    const traceId = req.headers['x-trace-id'] || `req-${Date.now()}`;
-    const startTime = Date.now();
+    // [GATEWAY_INCOMING]: Diagnostic log for catching payload failures
+    console.log("[GATEWAY_INCOMING]:", { 
+        body: req.body, 
+        file: req.file ? { 
+            filename: req.file.filename, 
+            mimetype: req.file.mimetype,
+            size: req.file.size
+        } : "NONE" 
+    });
 
-    logger.info({ traceId }, 'Starting analysis request');
+    const { text = "System: Clinically Empty (Multimodal Only)" } = req.body;
+    let patientContext = req.body.patientContext;
+    
+    // Multer populates req.file for images
+    const imageFile = req.file;
+    const isMultimodal = !!imageFile;
+
+    // Parse patientContext if it comes as a JSON string from form-data
+    if (typeof patientContext === 'string') {
+        try {
+            patientContext = JSON.parse(patientContext);
+        } catch (e) {
+            patientContext = null;
+        }
+    }
+
+    const traceId = req.headers['x-trace-id'] || `req-${Date.now()}`;
+    logger.info({ traceId, isMultimodal }, 'Starting analysis request');
 
     try {
         // 1. Context Creation or Search
@@ -30,47 +53,40 @@ export const analyzeClinicalNote = async (req: Request, res: Response) => {
         // 2. Note Creation
         const note = await prisma.clinicalNote.create({
             data: {
-                rawText: text,
+                rawText: text, // Already defaulted above
                 source: 'Direct_Input',
                 patientContextId: contextRecord.id,
-                doctorId: req.user.id
+                doctorId: (req as any).user.id
             }
         });
 
-        // 3. AI Gateway Call (Constraint: <2s)
+        // 3. AI Gateway Call
         let aiResult;
         try {
-            aiResult = await AIGatewayService.getPredictions(text);
+            aiResult = await AIGatewayService.getMultimodalPredictions(text, imageFile?.path);
         } catch (aiError: any) {
             if (aiError.message === 'AI_SERVICE_TIMEOUT') {
-                return res.status(503).json({
-                    status: 'error',
-                    message: 'AI Service timed out. System is configured to fail-open under heavy load.'
-                });
+                return res.status(503).json({ status: 'error', message: 'AI Service timed out.' });
             }
             if (aiError.message === 'AI_SERVICE_UNAVAILABLE') {
-                return res.status(503).json({
-                    status: 'error',
-                    message: 'AI Service is currently unreachable.'
-                });
-            }
-            if (aiError.message === 'AI_SERVICE_ERROR') {
-                return res.status(502).json({
-                    status: 'error',
-                    message: 'Inference engine yielded a malformed response.'
-                });
+                return res.status(503).json({ status: 'error', message: 'AI Service is currently unreachable.' });
             }
             throw aiError;
         }
 
-        // 4. Save Prediction
+        // 4. Save Prediction (Unified Results Side-by-Side)
         const prediction = await prisma.prediction.create({
             data: {
                 clinicalNoteId: note.id,
-                predictedLabels: aiResult.data.predictedLabels || [],
-                confidenceScores: aiResult.data.confidenceScores || {},
-                inferenceTimeMs: aiResult.inferenceTimeMs || 0,
-                explanation: aiResult.data.highlightZones || []
+                predictedLabels: aiResult.data.nlp.predictedLabels,
+                confidenceScores: aiResult.data.nlp.confidenceScores as any,
+                explanation: aiResult.data.nlp.highlightZones as any,
+                inferenceTimeMs: aiResult.inferenceTimeMs,
+                
+                // Multimodal Fields
+                isMultimodal: isMultimodal,
+                imageUrl: imageFile ? `/uploads/${imageFile.filename}` : null,
+                visualResults: aiResult.data.visual as any
             }
         });
 
@@ -79,12 +95,14 @@ export const analyzeClinicalNote = async (req: Request, res: Response) => {
         return res.status(200).json({
             status: 'success',
             data: {
-                patientContextId: contextRecord.id,
-                noteId: note.id,
-                predictionId: prediction.id,
-                labels: prediction.predictedLabels,
-                confidence: prediction.confidenceScores,
-                highlight_zones: aiResult.data.highlightZones,
+                predictionId: note.id, // We return the Note ID so the frontend can fetch details by note ID
+                nlp: {
+                    labels: prediction.predictedLabels,
+                    confidence: prediction.confidenceScores,
+                    highlight_zones: aiResult.data.nlp.highlightZones,
+                },
+                visual: prediction.visualResults,
+                imageUrl: prediction.imageUrl,
                 latency: prediction.inferenceTimeMs
             }
         });

@@ -23,7 +23,7 @@ export default function LoginPage() {
 
         try {
             console.log("LOGIN_ATTEMPT: Initiating request for", email);
-            const response = await api.post("/auth/login", {
+            const response = await api.post("auth/login", {
                 email,
                 password,
             });

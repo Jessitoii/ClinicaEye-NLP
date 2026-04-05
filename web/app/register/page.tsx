@@ -24,7 +24,7 @@ export default function RegisterPage() {
 
         try {
             console.log("REGISTER_ATTEMPT: Requesting provisioning for", email);
-            const response = await api.post("/auth/register", {
+            const response = await api.post("auth/register", {
                 name,
                 email,
                 password,

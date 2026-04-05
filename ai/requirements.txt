@@ -1,16 +1,19 @@
 # Core Engines: Deep Learning and Model Optimization
 torch
+torchvision
 transformers
 accelerate
 
 # Server & API: high-performance inference engine
 fastapi
 uvicorn
+python-multipart
 
 # Data & Metrics: processing and medical auditing (F1 calculation)
 pandas
 pyarrow
 scikit-learn
 
-# XAI: explainability for clinical word-importance highlights
+# XAI & Vision: explainability and image processing
 captum
+opencv-python-headless
