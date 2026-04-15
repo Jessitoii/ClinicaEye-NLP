@@ -92,18 +92,22 @@ api.interceptors.response.use(
 
 // Map backend labels/confidence to frontend PredictionResult structure
 const mapPredictions = (labels: string[] = [], confidence: Record<string, number> = {}): PredictionResult[] => {
-    if (labels && labels.length > 0) {
-        return labels.map(l => ({
-            class: l,
-            probability: confidence[l] || 0
-        }));
-    }
-    if (confidence) {
+    // Always map all available confidence scores so we don't hide classes with <50% probability
+    if (confidence && Object.keys(confidence).length > 0) {
         return Object.entries(confidence).map(([key, value]) => ({
             class: key,
             probability: value
         })).sort((a, b) => b.probability - a.probability);
     }
+    
+    // Fallback if confidence doesn't exist but labels do
+    if (labels && labels.length > 0) {
+        return labels.map(l => ({
+            class: l,
+            probability: 0
+        }));
+    }
+    
     return [];
 };
 

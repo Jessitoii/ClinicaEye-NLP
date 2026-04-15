@@ -36,10 +36,13 @@ class ODIRDataset(Dataset):
         return image, label
 
 def main():
-    base_dir = r"D:\Software\ClinicaEye-NLP\Data\ODIR-5K"
+    # Proje ana dizinini bul (ai/scripts içindeysek 2 üst dizin)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    
+    base_dir = os.path.join(project_root, "Data", "ODIR-5K")
     csv_file = os.path.join(base_dir, "full_df.csv")
     preprocessed_dir = os.path.join(base_dir, "preprocessed_images")
-    model_save_path = r"D:\Software\ClinicaEye-NLP\ai\models\odir_efficientnet_b4.pth"
+    model_save_path = os.path.join(project_root, "ai", "models", "odir_efficientnet_b4.pth")
     
     os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
     

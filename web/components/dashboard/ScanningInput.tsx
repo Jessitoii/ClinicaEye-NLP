@@ -38,9 +38,65 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                         Clinical Notes Input Vector
                     </h2>
                 </div>
+                {/* Form header left side */}
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6 border-b border-border/50 pb-4 mb-4">
                 
-                {/* Image Upload Trigger */}
-                <div className="flex items-center space-x-2">
+                {/* Left Column: Text input area + Submit Button */}
+                <div className="flex-1 flex flex-col min-h-[250px]">
+                    <div className="relative flex-1 flex flex-col">
+                        <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3 block">
+                            Clinical Notes / Observations
+                        </span>
+                        <textarea
+                            className="flex-1 w-full min-h-[160px] resize-none bg-black/30 border border-border/50 font-mono text-sm text-foreground/90 placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary p-4"
+                            placeholder="Paste unstructured clinical notes here..."
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            disabled={isLoading}
+                        />
+
+                        {/* Laser Scan Animation overlay */}
+                        <AnimatePresence>
+                            {isLoading && (
+                                <motion.div
+                                    initial={{ top: "0%" }}
+                                    animate={{ top: "100%" }}
+                                    transition={{
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        ease: "linear",
+                                    }}
+                                    className="absolute left-0 top-[28px] w-full h-[2px] bg-primary shadow-[0_0_10px_2px_rgba(0,240,255,0.5)] z-10 pointer-events-none"
+                                />
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="mt-4 flex flex-row justify-end">
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={(!text.trim() && !selectedFile) || isLoading}
+                            className="rounded-none bg-primary text-primary-foreground hover:bg-primary/80 font-mono font-bold w-full sm:w-auto min-w-[200px] transition-colors"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ANALYZING SEQUENCE...
+                                </>
+                            ) : (
+                                "INITIATE ANALYSIS [ENTER]"
+                            )}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Right Column: Image Dropzone / Upload area */}
+                <div className="md:w-1/3 flex flex-col space-y-2">
+                    <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">
+                        Fundus Scan (Ocular)
+                    </span>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -48,78 +104,38 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                         accept="image/*"
                         className="hidden"
                     />
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="rounded-none font-mono text-[10px] border-primary/40 text-primary hover:bg-primary/10 transition-colors h-7 px-3"
-                    >
-                        <ImageIcon className="mr-1.5 h-3 w-3" />
-                        UPLOAD_FUNDUS_IMG
-                    </Button>
-                </div>
-            </div>
 
-            <div className="relative flex-grow min-h-[250px]">
-                <textarea
-                    className="h-full w-full resize-none bg-transparent font-mono text-sm text-foreground/90 placeholder:text-muted-foreground outline-none border-none p-0 focus:ring-0"
-                    placeholder="Paste unstructured clinical notes here..."
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    disabled={isLoading}
-                />
-
-                {/* Selected File Badge */}
-                <AnimatePresence>
-                    {selectedFile && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-2 left-2 bg-primary/10 border border-primary/50 px-2 py-1 flex items-center space-x-2"
+                    {!selectedFile ? (
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="border-2 border-dashed border-primary/30 flex flex-col items-center justify-center h-48 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors text-primary/80"
                         >
-                            <span className="text-[10px] font-mono text-primary font-bold">
-                                IMG: {selectedFile.name.toUpperCase()}
+                            <ImageIcon className="h-8 w-8 mb-2 opacity-80" />
+                            <span className="font-mono text-sm uppercase font-bold tracking-widest text-center px-4">
+                                Click to Upload<br />Fundus Image
                             </span>
-                            <button onClick={removeFile} className="text-primary hover:text-white transition-colors">
-                                <X className="h-3 w-3" />
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Laser Scan Animation overlay */}
-                <AnimatePresence>
-                    {isLoading && (
-                        <motion.div
-                            initial={{ top: "0%" }}
-                            animate={{ top: "100%" }}
-                            transition={{
-                                duration: 1.5,
-                                repeat: Infinity,
-                                ease: "linear",
-                            }}
-                            className="absolute left-0 w-full h-[2px] bg-primary shadow-[0_0_10px_2px_rgba(0,240,255,0.5)] z-10 pointer-events-none"
-                        />
-                    )}
-                </AnimatePresence>
-            </div>
-
-            <div className="mt-4 flex justify-end pt-4 border-t border-border/50">
-                <Button
-                    onClick={handleSubmit}
-                    disabled={(!text.trim() && !selectedFile) || isLoading}
-                    className="rounded-none bg-primary text-primary-foreground hover:bg-primary/80 font-mono font-bold w-full sm:w-auto min-w-[200px] transition-colors"
-                >
-                    {isLoading ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ANALYZING SEQUENCE...
-                        </>
+                        </div>
                     ) : (
-                        "INITIATE ANALYSIS [ENTER]"
+                        <div className="relative border border-primary/50 h-48 flex items-center justify-center bg-black overflow-hidden group">
+                            <img
+                                src={URL.createObjectURL(selectedFile)}
+                                alt="Fundus Preview"
+                                className="object-cover w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
+                            />
+                            <div className="absolute top-0 right-0 bg-black/80 backdrop-blur pb-1 pl-1">
+                                <button onClick={removeFile} className="p-2 text-destructive hover:text-white transition-colors">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <div className="absolute bottom-0 w-full bg-black/80 backdrop-blur p-1">
+                                <span className="text-[10px] font-mono text-primary font-bold px-1 truncate block">
+                                    {selectedFile.name.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
                     )}
-                </Button>
+                </div>
+
             </div>
         </div>
     );

@@ -18,37 +18,14 @@ interface DualRadarChartProps {
 
 export function DualRadarChart({ nlpData = [], visionData = [] }: DualRadarChartProps) {
     
-    const FIXED_AXES = [
-        { label: "Cataract", nlp: "Cataract", vision: "Cataract" },
-        { label: "Glaucoma", nlp: "Glaucoma", vision: "Glaucoma" },
-        { label: "Diabetes/DR", nlp: "Diabetic Retinopathy", vision: "Diabetes" },
-        { label: "AMD/Macular Degeneration", nlp: "Macular Degeneration", vision: "AMD" },
-    ];
-
     const radarData = useMemo(() => {
-        // Logging for collisions and mismatches
-        const nlpMappedClasses = nlpData.map(d => d.class);
-        const visionMappedClasses = visionData.map(d => d.class);
-
-        // [MAPPING_COLLISION_LOG] Checking for classes that are ignored
-        const unmappedVision = visionMappedClasses.filter(c => !FIXED_AXES.some(a => a.vision === c));
-        const unmappedNLP = nlpMappedClasses.filter(c => !FIXED_AXES.some(a => a.nlp === c));
-
-        if (unmappedVision.length > 0) {
-            console.log(`[MAPPING_COLLISION_LOG] Skipping unmapped Vision descriptors: ${unmappedVision.join(", ")}`);
-        }
-        if (unmappedNLP.length > 0) {
-            console.log(`[MAPPING_COLLISION_LOG] Skipping unmapped NLP descriptors: ${unmappedNLP.join(", ")}`);
-        }
-
-        return FIXED_AXES.map(axis => {
-            const nlpMatch = nlpData.find(d => d.class === axis.nlp);
-            const visionMatch = visionData.find(d => d.class === axis.vision);
-
+        // Data provided by page.tsx is already aligned. nlpData and visionData have identical classes.
+        return nlpData.map((nlpItem, index) => {
+            const visionItem = visionData?.[index];
             return {
-                subject: axis.label,
-                NLP: nlpMatch ? Math.round(nlpMatch.probability * 100) : 0,
-                Vision: visionMatch ? Math.round(visionMatch.probability * 100) : 0,
+                subject: nlpItem.class.toUpperCase(),
+                NLP: Math.round(nlpItem.probability * 100),
+                Vision: visionItem ? Math.round(visionItem.probability * 100) : 0,
                 fullMark: 100,
             };
         });

@@ -96,9 +96,10 @@ export default function AnalysisView() {
     const isMultimodal = Boolean(payload.isMultimodal) || Boolean(payload.visual);
 
     // ─── NLP VERİSİ ───────────────────────────────────────────────────────────
-    // predictions sadece top-1 döndürüyor: [{class: "Macular Degeneration", probability: 0.81}]
-    const nlpDataArray: { class: string; probability: number }[] =
-        Array.isArray(payload.predictions)
+    const nlpConfidence = payload.nlp?.confidence || payload.confidenceScores || {};
+    const nlpDataArray: { class: string; probability: number }[] = Object.keys(nlpConfidence).length > 0
+        ? Object.entries(nlpConfidence).map(([cls, prob]) => ({ class: cls, probability: Number(prob) }))
+        : Array.isArray(payload.predictions) 
             ? payload.predictions.map((p: any) => ({
                 class: p.class || p.predictedLabel || "",
                 probability: p.probability ?? p.confidence ?? 0,
@@ -106,7 +107,6 @@ export default function AnalysisView() {
             : [];
 
     // ─── VİZYON VERİSİ ────────────────────────────────────────────────────────
-    // payload.visual.predictions = 8 class [{class, probability}]
     const VISION_TO_NLP_MAP: Record<string, string> = {
         AMD: "Macular Degeneration",
         Diabetes: "Diabetic Retinopathy",
@@ -117,14 +117,12 @@ export default function AnalysisView() {
     const rawVisionPredictions: any[] =
         Array.isArray(payload.visual?.predictions)
             ? payload.visual.predictions
-            // Object ise entries'e çevir
             : Object.entries(payload.visual?.predictions || {}).map(([cls, prob]) => ({
                 class: cls,
                 probability: Number(prob),
             }));
 
     const visionDataArray = rawVisionPredictions.map((p: any) => {
-        // probability bir obje mi yoksa number mı kontrol et
         const actualClass = typeof p.probability === "object" ? p.probability.class : p.class;
         const actualProb = typeof p.probability === "object" ? p.probability.probability : Number(p.probability);
 
@@ -142,9 +140,21 @@ export default function AnalysisView() {
         ])
     );
 
+    // ─── HEATMAP & GÖRSEL ─────────────────────────────────────────────────────
+    const clinicalText = payload.text || "NO_SEQUENCE_DATA";
+    const isTextEmpty = clinicalText === "System: Clinically Empty (Multimodal Only)" || clinicalText === "NO_SEQUENCE_DATA";
+    const imageUrl = payload.imageUrl;
+
+    // Zero out NLP if text was exactly the placeholder
+    const finalNlpDataArray = nlpDataArray.map(p => ({
+        ...p,
+        probability: isTextEmpty ? 0 : p.probability
+    }));
+
+    // Re-align using finalNlpDataArray
     const alignedNlpData = radarAxes.map((axis) => ({
         class: axis,
-        probability: nlpDataArray.find((d) => d.class === axis)?.probability || 0,
+        probability: finalNlpDataArray.find((d) => d.class === axis)?.probability || 0,
     }));
 
     const alignedVisionData = radarAxes.map((axis) => ({
@@ -152,13 +162,9 @@ export default function AnalysisView() {
         probability: visionDataArray.find((d) => d.class === axis)?.probability || 0,
     }));
 
-    // ─── HEATMAP & GÖRSEL ─────────────────────────────────────────────────────
-    const clinicalText = payload.text || "NO_SEQUENCE_DATA";
-    const imageUrl = payload.imageUrl;
-
     // NLP word highlights → payload.highlight_zones [{word, importance}]
     const rawNlpHighlights: any[] = payload.highlight_zones || [];
-    const nlpHighlightZones = rawNlpHighlights.map((e: any) => ({
+    const nlpHighlightZones = isTextEmpty ? [] : rawNlpHighlights.map((e: any) => ({
         word: e.word || e.text || "",
         importance: e.importance ?? e.score ?? 0,
         text: e.word || e.text || "",
@@ -181,12 +187,10 @@ export default function AnalysisView() {
         ];
 
         for (const disease of CRITICAL_DISEASES) {
-            const nlpVal =
-                nlpDataArray.find((p) => p.class === disease)?.probability || 0;
-            const visionVal =
-                visionDataArray.find((p) => p.class === disease)?.probability || 0;
+            const nlpVal = finalNlpDataArray.find((p) => p.class === disease)?.probability || 0;
+            const visionVal = visionDataArray.find((p) => p.class === disease)?.probability || 0;
 
-            if (nlpVal >= 0.5 && visionVal >= 0.5) {
+            if (!isTextEmpty && nlpVal >= 0.5 && visionVal >= 0.5) {
                 consensusType = "SUCCESS";
                 consensusClass = disease;
                 break;
@@ -198,9 +202,9 @@ export default function AnalysisView() {
         }
 
         // NLP top prediction'dan da kontrol et (confidenceScores yoksa)
-        if (!consensusType && nlpDataArray.length > 0) {
-            const topNlp = nlpDataArray[0];
-            if (topNlp.probability >= 0.5) {
+        if (!consensusType && finalNlpDataArray.length > 0) {
+            const topNlp = finalNlpDataArray[0];
+            if (topNlp.probability >= 0.5 && !isTextEmpty) {
                 consensusType = "MEDIUM";
                 consensusClass = topNlp.class;
             }
@@ -281,7 +285,7 @@ export default function AnalysisView() {
                 {/* ── SOL PANEL ── */}
                 <section className="lg:col-span-8 h-full overflow-y-auto border-r border-border/30 p-6 space-y-8 custom-scrollbar">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        {/* NLP Heatmap */}
+                        {/* NLP Heatmap and Results */}
                         <div className="space-y-4">
                             <header className="flex items-center gap-2 text-primary">
                                 <BrainCircuit className="w-4 h-4" />
@@ -289,13 +293,53 @@ export default function AnalysisView() {
                                     Textual Evidence Mapping
                                 </h3>
                             </header>
-                            <EvidenceHeatmap
-                                text={clinicalText}
-                                explanations={nlpHighlightZones}
-                            />
+
+                            {isTextEmpty ? (
+                                <div className="border border-border/50 flex flex-col items-center justify-center text-muted-foreground bg-primary/5 h-48 mt-4">
+                                    <BrainCircuit className="w-6 h-6 opacity-40 mb-3" />
+                                    <span className="text-xs font-mono uppercase tracking-widest text-center">
+                                        No Clinical Text Provided<br />Bypassing NLP Analysis
+                                    </span>
+                                </div>
+                            ) : (
+                                <>
+                                    <EvidenceHeatmap
+                                        text={clinicalText}
+                                        explanations={nlpHighlightZones}
+                                    />
+                                    {/* NLP RESULTS LIST */}
+                                    <div className="bg-[#1A1A1A] border border-border/40 p-4 mt-4">
+                                        <h4 className="text-[10px] font-mono text-muted-foreground uppercase mb-4 tracking-widest">
+                                            NLP Pathology Markers (8 Classes)
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {[...finalNlpDataArray]
+                                                .sort((a, b) => b.probability - a.probability)
+                                                .map((p, idx) => (
+                                                    <div key={idx} className="flex flex-col gap-1.5">
+                                                        <div className="flex justify-between items-end">
+                                                            <span className="text-xs font-mono font-bold text-foreground truncate">
+                                                                {p.class.toUpperCase()}
+                                                            </span>
+                                                            <span className="text-[11px] font-mono text-primary">
+                                                                {Math.round(p.probability * 100)}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-1 bg-black rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-primary/40"
+                                                                style={{ width: `${Math.min(100, Math.max(0, p.probability * 100))}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
-                        {/* Visual */}
+                        {/* Visual Heatmap and Results */}
                         <div className="space-y-4">
                             <header className="flex items-center gap-2 text-amber-400">
                                 <ScanSearch className="w-4 h-4" />
@@ -307,6 +351,36 @@ export default function AnalysisView() {
                                 imageUrl={imageUrl}
                                 highlights={visualHighlightZones}
                             />
+                            {/* VISION RESULTS LIST */}
+                            {isMultimodal && (
+                                <div className="bg-[#1A1A1A] border border-border/40 p-4 mt-4">
+                                    <h4 className="text-[10px] font-mono text-muted-foreground uppercase mb-4 tracking-widest">
+                                        Vision Pathology Markers
+                                    </h4>
+                                    <div className="space-y-4">
+                                        {[...visionDataArray]
+                                            .sort((a, b) => b.probability - a.probability)
+                                            .map((p, idx) => (
+                                                <div key={idx} className="flex flex-col gap-1.5">
+                                                    <div className="flex justify-between items-end">
+                                                        <span className="text-xs font-mono font-bold text-foreground truncate">
+                                                            {p.class.toUpperCase()}
+                                                        </span>
+                                                        <span className="text-[11px] font-mono text-amber-500">
+                                                            {Math.round(p.probability * 100)}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-1 bg-black rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-amber-500/50"
+                                                            style={{ width: `${Math.min(100, Math.max(0, p.probability * 100))}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -345,14 +419,29 @@ export default function AnalysisView() {
                     </div>
 
                     {/* Top Markers — vision data daha zengin olduğu için onu göster */}
+                    {/* Top Markers (Aggregate Consensus Mode) */}
                     <div className="bg-[#1A1A1A] border border-border/40 p-4">
                         <h4 className="text-[10px] font-mono text-muted-foreground uppercase mb-4 tracking-widest">
                             Top Aggregate Markers
                         </h4>
                         <div className="space-y-4">
-                            {[...visionDataArray]
-                                .sort((a, b) => b.probability - a.probability)
-                                .slice(0, 4)
+                            {radarAxes
+                                .map((cls) => {
+                                    const nlpProb = finalNlpDataArray.find((p) => p.class === cls)?.probability || 0;
+                                    const visProb = visionDataArray.find((p) => p.class === cls)?.probability || 0;
+                                    
+                                    let score = 0;
+                                    if (isMultimodal && !isTextEmpty) {
+                                        score = (nlpProb + visProb) / 2;
+                                    } else if (isMultimodal && isTextEmpty) {
+                                        score = visProb;
+                                    } else {
+                                        score = nlpProb;
+                                    }
+                                    return { class: cls, score };
+                                })
+                                .sort((a, b) => b.score - a.score)
+                                .slice(0, 5)
                                 .map((p, idx) => (
                                     <div key={idx} className="flex flex-col gap-1.5">
                                         <div className="flex justify-between items-end">
@@ -360,15 +449,13 @@ export default function AnalysisView() {
                                                 # {p.class.toUpperCase()}
                                             </span>
                                             <span className="text-[11px] font-mono text-primary">
-                                                {Math.round(p.probability * 100)}%
+                                                {Math.round(p.score * 100)}%
                                             </span>
                                         </div>
                                         <div className="h-1 bg-black rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-primary/40"
-                                                style={{
-                                                    width: `${p.probability * 100}%`,
-                                                }}
+                                                style={{ width: `${Math.min(100, Math.max(0, p.score * 100))}%` }}
                                             />
                                         </div>
                                     </div>
