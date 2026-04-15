@@ -21,12 +21,25 @@ export interface HighlightZone {
     importance: number;
 }
 
+export interface VisualHighlight {
+    disease_class: string;
+    heatmap_base64: string;
+}
+
 export interface InferenceResponse {
     id: string;
     text: string;
     latency_ms: number;
     predictions: PredictionResult[];
     highlight_zones: HighlightZone[];
+    // Multimodal Integration
+    isMultimodal: boolean;
+    imageUrl: string | null;
+    visual?: {
+        status: string;
+        predictions: PredictionResult[];
+        highlight_zones: VisualHighlight[];
+    } | null;
 }
 
 export interface HistoryItem {
@@ -34,14 +47,14 @@ export interface HistoryItem {
     createdAt: string;
     originalText: string;
     predictions: PredictionResult[];
+    isMultimodal: boolean;
 }
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
-    headers: {
-        "Content-Type": "application/json",
-    },
 });
+
+const BACKEND_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1").replace("/api/v1", "");
 
 // Request Interceptor: Attach JWT token if it exists
 api.interceptors.request.use((config) => {
@@ -58,12 +71,19 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // We pass the error down to the UI to handle and display stark terminal errors
+        // [GATEWAY_RESPONSE_CRITICAL]: Diagnostic logs for failed clinical analysis cycles
+        console.error("GATEWAY_RESPONSE_CRITICAL:", {
+            route: error.config?.url,
+            status: error.response?.status,
+            msg: error.response?.data?.message || error.message,
+            payload: error.config?.data instanceof FormData ? "FormData(Multipart)" : "Other"
+        });
+
+        // Handle security tokens
         if (error.response?.status === 401) {
             if (typeof window !== "undefined") {
                 localStorage.removeItem("jwt");
                 localStorage.removeItem("user");
-                // Optionally redirect to login, but we'll manage this in AuthContext or hooks
             }
         }
         return Promise.reject(error);
@@ -72,38 +92,44 @@ api.interceptors.response.use(
 
 // Map backend labels/confidence to frontend PredictionResult structure
 const mapPredictions = (labels: string[] = [], confidence: Record<string, number> = {}): PredictionResult[] => {
-    // If we have labels, use them. If not, map everything from confidence mapping
-    if (labels.length > 0) {
+    if (labels && labels.length > 0) {
         return labels.map(l => ({
             class: l,
             probability: confidence[l] || 0
         }));
     }
-    // Fallback if labels is empty but we have confidence scores
-    return Object.entries(confidence).map(([key, value]) => ({
-        class: key,
-        probability: value
-    })).sort((a, b) => b.probability - a.probability);
+    if (confidence) {
+        return Object.entries(confidence).map(([key, value]) => ({
+            class: key,
+            probability: value
+        })).sort((a, b) => b.probability - a.probability);
+    }
+    return [];
 };
 
 // Endpoints
-export const submitClinicalNote = async (text: string): Promise<InferenceResponse> => {
-    const res = await api.post<ApiResponse<any>>("/analyze", { text });
+export const submitClinicalNote = async (formData: FormData): Promise<InferenceResponse> => {
+    // Note: Now supports FormData for multimodal uploads
+    const res = await api.post<ApiResponse<any>>("analyze", formData);
     const { data } = res.data;
 
     return {
-        id: data.predictionId || data.noteId,
-        text: text,
+        id: data.predictionId,
+        text: data.nlp?.text || "",
         latency_ms: data.latency || 0,
-        predictions: mapPredictions(data.labels, data.confidence),
-        highlight_zones: data.highlight_zones || []
+        predictions: mapPredictions(data.nlp?.labels, data.nlp?.confidence),
+        highlight_zones: data.nlp?.highlight_zones || [],
+        isMultimodal: !!data.imageUrl,
+        imageUrl: data.imageUrl ? `${BACKEND_BASE}${data.imageUrl}` : null,
+        visual: data.visual ? {
+            ...data.visual,
+            predictions: mapPredictions([], data.visual.predictions)
+        } : null
     };
 };
 
 export const getHistory = async (): Promise<HistoryItem[]> => {
-    const res = await api.get<ApiResponse<any[]>>("/history");
-    // Some backend versions might have 'data' as { count, data } or just []. 
-    // MedicalController.getHistory returns { status, count, data: history }
+    const res = await api.get<ApiResponse<any[]>>("history");
     const historyData = Array.isArray(res.data.data) ? res.data.data : [];
 
     return historyData.map(item => ({
@@ -113,30 +139,38 @@ export const getHistory = async (): Promise<HistoryItem[]> => {
         predictions: mapPredictions(
             item.predictions?.[0]?.predictedLabels,
             item.predictions?.[0]?.confidenceScores
-        )
+        ),
+        isMultimodal: item.predictions?.[0]?.isMultimodal || false
     }));
 };
 
 export const getPredictionById = async (id: string): Promise<InferenceResponse> => {
-    const res = await api.get<ApiResponse<any>>(`/analyze/${id}`); // Note: Backend may need this route
+    const res = await api.get<ApiResponse<any>>(`analyze/${id}`);
     const { data } = res.data;
+    const latestPred = (data.predictions && data.predictions.length > 0) ? data.predictions[0] : {};
 
     return {
         id: data.id,
-        text: data.rawText,
-        latency_ms: data.predictions?.[0]?.inferenceTimeMs || 0,
+        text: data.rawText || "",
+        latency_ms: latestPred.inferenceTimeMs || 0,
         predictions: mapPredictions(
-            data.predictions?.[0]?.predictedLabels,
-            data.predictions?.[0]?.confidenceScores
+            latestPred.predictedLabels,
+            latestPred.confidenceScores
         ),
-        highlight_zones: data.predictions?.[0]?.explanation || []
+        highlight_zones: latestPred.explanation || [],
+        isMultimodal: latestPred.isMultimodal || false,
+        imageUrl: latestPred.imageUrl ? `${BACKEND_BASE}${latestPred.imageUrl}` : null,
+        visual: latestPred.visualResults ? {
+            ...latestPred.visualResults,
+            predictions: mapPredictions([], latestPred.visualResults.predictions)
+        } : null
     };
 };
 
 export const getExportData = async (id: string): Promise<any> => {
     try {
         console.log("INIT_EXPORT_REQUEST", { id, timestamp: new Date().toISOString() });
-        const res = await api.get<ApiResponse<any>>(`/analyze/${id}/export`);
+        const res = await api.get<ApiResponse<any>>(`analyze/${id}/export`);
         console.log("EXPORT_FETCH_SUCCESS", { id });
         return res.data.data;
     } catch (error: any) {
@@ -154,7 +188,7 @@ export const exportPdfServerSide = async (id: string, token: string | null): Pro
         console.log("INIT_SSG_PDF_REQUEST", { id, timestamp: new Date().toISOString() });
         const finalToken = token || (typeof window !== "undefined" ? localStorage.getItem("jwt") : null);
 
-        const res = await api.post(`/analyze/${id}/export-pdf`, { token: finalToken }, {
+        const res = await api.post(`analyze/${id}/export-pdf`, { token: finalToken }, {
             responseType: 'blob'
         });
         console.log("SSG_PDF_FETCH_SUCCESS", { id });
