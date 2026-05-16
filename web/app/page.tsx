@@ -46,17 +46,17 @@ export default function DashboardPage() {
       <header className="flex h-16 items-center justify-between border-b border-border/40 px-6 bg-card">
         <div className="flex items-center space-x-3">
           <Activity className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold font-mono tracking-wider">CLINICA_EYE <span className="text-muted-foreground font-light">| SYS_DASHBOARD</span></h1>
+          <h1 className="text-xl font-bold font-mono tracking-wider">CLINICA_EYE <span className="text-muted-foreground font-light">| SİSTEM PANELİ</span></h1>
         </div>
         <div className="flex items-center space-x-6">
           <nav className="hidden md:flex items-center space-x-4">
             <Link href="/history" className="text-xs font-mono text-muted-foreground hover:text-primary flex items-center space-x-1 transition-colors">
               <History className="h-3 w-3" />
-              <span>ARCHIVE</span>
+              <span>ARŞİV</span>
             </Link>
             <Link href="/profile" className="text-xs font-mono text-muted-foreground hover:text-primary flex items-center space-x-1 transition-colors">
               <User className="h-3 w-3" />
-              <span>PROFILE</span>
+              <span>PROFİL</span>
             </Link>
           </nav>
           <div className="h-4 w-[1px] bg-border/50 hidden md:block" />
@@ -81,25 +81,25 @@ export default function DashboardPage() {
         <aside className="w-full lg:w-80 flex flex-col space-y-4">
           <div className="border border-border p-4 bg-card h-full lg:min-h-[500px]">
             <h3 className="text-sm font-mono text-muted-foreground uppercase tracking-widest border-b border-border/50 pb-2 mb-4">
-              System Telemetry
+              Sistem Telemetrisi
             </h3>
 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-mono text-muted-foreground">API CONNECT</span>
+                <span className="text-sm font-mono text-muted-foreground">API BAĞLANTISI</span>
                 <div className="flex items-center space-x-2 text-primary">
                   <Wifi className="h-4 w-4" />
-                  <span className="text-xs font-mono">SECURE</span>
+                  <span className="text-xs font-mono">GÜVENLİ</span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm font-mono text-muted-foreground">INFERENCE SLA</span>
+                <span className="text-sm font-mono text-muted-foreground">ÇIKARIM SLA</span>
                 <span className="text-xs font-mono text-green-400">&lt; 2.0s</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm font-mono text-muted-foreground">LAST LATENCY</span>
+                <span className="text-sm font-mono text-muted-foreground">SON GECİKME</span>
                 <span className="text-xs font-mono text-foreground">
                   {lastLatency ? `${lastLatency}ms` : '---'}
                 </span>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
 
               <div className="mt-8 pt-4 border-t border-border/50">
                 <p className="text-xs font-mono text-muted-foreground leading-relaxed">
-                  Awaiting clinical input. Ensure PHI is de-identified before submission per security protocols.
+                  Klinik veri bekleniyor. Güvenlik protokolleri gereği KVKK/PHI verilerinin anonimleştirildiğinden emin olun.
                 </p>
               </div>
             </div>

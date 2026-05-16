@@ -18,6 +18,24 @@ import {
     ScanSearch,
 } from "lucide-react";
 
+const TR_DISEASE: Record<string, string> = {
+    "Normal": "Normal",
+    "Diabetes": "Diyabetik Retinopati",
+    "Diabetic Retinopathy": "Diyabetik Retinopati",
+    "Glaucoma": "Glokom",
+    "Cataract": "Katarakt",
+    "AMD": "Makula Dejenerasyonu",
+    "Macular Degeneration": "Makula Dejenerasyonu",
+    "Hypertension": "Hipertansiyon",
+    "Myopia": "Miyopi",
+    "Other": "Diğer",
+    "Conjunctivitis": "Konjonktivit",
+    "Dry Eye Syndrome": "Kuru Göz Sendromu",
+    "Retinal Detachment": "Retina Dekolmanı",
+    "Uveitis": "Üveit"
+};
+const tDisease = (d: string) => TR_DISEASE[d] || d;
+
 export default function AnalysisView() {
     const { id } = useParams();
     const router = useRouter();
@@ -49,14 +67,14 @@ export default function AnalysisView() {
             <div className="min-h-screen flex flex-col items-center justify-center font-mono bg-[#0A0A0A] text-foreground p-8 text-center">
                 <AlertTriangle className="h-16 w-16 text-destructive mb-6 animate-pulse" />
                 <h2 className="text-xl font-bold mb-2 uppercase tracking-tighter">
-                    ERR_NOT_FOUND: Sequence Missing
+                    HATA BULUNAMADI: Dizi Eksik
                 </h2>
                 <Button
                     onClick={() => router.push("/")}
                     variant="outline"
                     className="rounded-none border-primary text-primary mt-8"
                 >
-                    Return to Control Center
+                    Kontrol Merkezine Dön
                 </Button>
             </div>
         );
@@ -68,7 +86,7 @@ export default function AnalysisView() {
                 <div className="flex flex-col items-center space-y-4">
                     <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-primary animate-pulse">
-                        Synchronizing Multimodal Diagnostic Ledger...
+                        Çok Modlu Teşhis Defteri Senkronize Ediliyor...
                     </p>
                 </div>
             </div>
@@ -240,23 +258,23 @@ export default function AnalysisView() {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-lg font-black font-mono tracking-tight uppercase leading-none">
-                                DIAGNOSTIC_DECRYPT{" "}
+                                TEŞHİS ŞİFRESİ ÇÖZ{" "}
                                 <span className="text-muted-foreground ml-2">
                                     / {predictionId.substring(predictionId.length - 8)}
                                 </span>
                             </h1>
                             {isMultimodal && (
                                 <span className="px-2 py-0.5 text-[8px] font-black bg-primary text-black flex items-center gap-1 rounded-sm">
-                                    <Activity className="w-2.5 h-2.5" /> MULTIMODAL_ACTIVE
+                                    <Activity className="w-2.5 h-2.5" /> ÇOKLU MOD AKTİF
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-4 mt-1">
                             <code className="text-[9px] text-muted-foreground uppercase tracking-widest leading-none">
-                                LATENCY: {latency}ms
+                                GECİKME: {latency}ms
                             </code>
                             <code className="text-[9px] text-muted-foreground uppercase tracking-widest leading-none underline decoration-primary/40 underline-offset-2">
-                                SECURITY_CLEARANCE: LVL_4
+                                GÜVENLİK İZNİ: Svy 4
                             </code>
                         </div>
                     </div>
@@ -264,14 +282,14 @@ export default function AnalysisView() {
                 <div className="flex items-center gap-4">
                     {consensusType === "SUCCESS" && (
                         <div className="px-4 py-2 bg-green-500/20 border border-green-500/50 text-green-400 font-mono text-[10px] font-bold animate-pulse flex items-center gap-2">
-                            [ ! ] CROSS_MODEL_VALIDATION_SUCCESS:{" "}
-                            {consensusClass.toUpperCase()}
+                            [ ! ] ÇAPRAZ MODEL DOĞRULAMA BAŞARILI:{" "}
+                            {tDisease(consensusClass).toUpperCase()}
                         </div>
                     )}
                     {consensusType === "MEDIUM" && (
                         <div className="px-4 py-2 bg-amber-500/20 border border-amber-500/50 text-amber-400 font-mono text-[10px] font-bold flex items-center gap-2">
-                            [ ? ] MEDIUM_CONFIDENCE_CONSENSUS:{" "}
-                            {consensusClass.toUpperCase()}
+                            [ ? ] ORTA GÜVEN MUTABAKATI:{" "}
+                            {tDisease(consensusClass).toUpperCase()}
                         </div>
                     )}
                     <ExportUtility
@@ -290,7 +308,7 @@ export default function AnalysisView() {
                             <header className="flex items-center gap-2 text-primary">
                                 <BrainCircuit className="w-4 h-4" />
                                 <h3 className="text-xs font-mono font-bold uppercase tracking-widest">
-                                    Textual Evidence Mapping
+                                    Metinsel Kanıt Eşlemesi
                                 </h3>
                             </header>
 
@@ -298,7 +316,7 @@ export default function AnalysisView() {
                                 <div className="border border-border/50 flex flex-col items-center justify-center text-muted-foreground bg-primary/5 h-48 mt-4">
                                     <BrainCircuit className="w-6 h-6 opacity-40 mb-3" />
                                     <span className="text-xs font-mono uppercase tracking-widest text-center">
-                                        No Clinical Text Provided<br />Bypassing NLP Analysis
+                                        Klinik Metin Sağlanmadı<br />NLP Analizi Atlanıyor
                                     </span>
                                 </div>
                             ) : (
@@ -310,7 +328,7 @@ export default function AnalysisView() {
                                     {/* NLP RESULTS LIST */}
                                     <div className="bg-[#1A1A1A] border border-border/40 p-4 mt-4">
                                         <h4 className="text-[10px] font-mono text-muted-foreground uppercase mb-4 tracking-widest">
-                                            NLP Pathology Markers (8 Classes)
+                                            NLP Patoloji İşaretçileri (8 Sınıf)
                                         </h4>
                                         <div className="space-y-4">
                                             {[...finalNlpDataArray]
@@ -319,7 +337,7 @@ export default function AnalysisView() {
                                                     <div key={idx} className="flex flex-col gap-1.5">
                                                         <div className="flex justify-between items-end">
                                                             <span className="text-xs font-mono font-bold text-foreground truncate">
-                                                                {p.class.toUpperCase()}
+                                                                {tDisease(p.class).toUpperCase()}
                                                             </span>
                                                             <span className="text-[11px] font-mono text-primary">
                                                                 {Math.round(p.probability * 100)}%
@@ -344,7 +362,7 @@ export default function AnalysisView() {
                             <header className="flex items-center gap-2 text-amber-400">
                                 <ScanSearch className="w-4 h-4" />
                                 <h3 className="text-xs font-mono font-bold uppercase tracking-widest">
-                                    Retinal Landmark Visualization
+                                    Retinal Dönüm Noktası Görselleştirmesi
                                 </h3>
                             </header>
                             <VisualDiagnosticFeed
@@ -355,7 +373,7 @@ export default function AnalysisView() {
                             {isMultimodal && (
                                 <div className="bg-[#1A1A1A] border border-border/40 p-4 mt-4">
                                     <h4 className="text-[10px] font-mono text-muted-foreground uppercase mb-4 tracking-widest">
-                                        Vision Pathology Markers
+                                        Görsel Patoloji İşaretçileri
                                     </h4>
                                     <div className="space-y-4">
                                         {[...visionDataArray]
@@ -364,7 +382,7 @@ export default function AnalysisView() {
                                                 <div key={idx} className="flex flex-col gap-1.5">
                                                     <div className="flex justify-between items-end">
                                                         <span className="text-xs font-mono font-bold text-foreground truncate">
-                                                            {p.class.toUpperCase()}
+                                                            {tDisease(p.class).toUpperCase()}
                                                         </span>
                                                         <span className="text-[11px] font-mono text-amber-500">
                                                             {Math.round(p.probability * 100)}%
@@ -389,7 +407,7 @@ export default function AnalysisView() {
                         <header className="flex items-center gap-2 text-muted-foreground mb-6">
                             <Thermometer className="w-4 h-4" />
                             <h3 className="text-xs font-mono font-bold uppercase tracking-widest">
-                                Cross-Correlation Matrix (NLP vs Vision)
+                                Çapraz Korelasyon Matrisi (NLP vs Görsel)
                             </h3>
                         </header>
                         <DualRadarChart
@@ -404,7 +422,7 @@ export default function AnalysisView() {
                     {/* Triage Level */}
                     <div className="space-y-2">
                         <header className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-2">
-                            <ShieldCheck className="w-3 h-3" /> System Triage Level
+                            <ShieldCheck className="w-3 h-3" /> Sistem Triyaj Seviyesi
                         </header>
                         <div className="h-1 bg-muted rounded-full overflow-hidden">
                             <div
@@ -422,7 +440,7 @@ export default function AnalysisView() {
                     {/* Top Markers (Aggregate Consensus Mode) */}
                     <div className="bg-[#1A1A1A] border border-border/40 p-4">
                         <h4 className="text-[10px] font-mono text-muted-foreground uppercase mb-4 tracking-widest">
-                            Top Aggregate Markers
+                            En Yüksek Birleştirilmiş İşaretçiler
                         </h4>
                         <div className="space-y-4">
                             {radarAxes
@@ -446,7 +464,7 @@ export default function AnalysisView() {
                                     <div key={idx} className="flex flex-col gap-1.5">
                                         <div className="flex justify-between items-end">
                                             <span className="text-xs font-mono font-bold text-foreground">
-                                                # {p.class.toUpperCase()}
+                                                # {tDisease(p.class).toUpperCase()}
                                             </span>
                                             <span className="text-[11px] font-mono text-primary">
                                                 {Math.round(p.score * 100)}%
@@ -466,20 +484,20 @@ export default function AnalysisView() {
                     {/* Clinical Summary */}
                     <div className="p-4 border border-primary/20 bg-primary/5">
                         <h4 className="text-[10px] font-mono text-primary font-bold uppercase mb-2">
-                            Automated Clinical Summary
+                            Otomatik Klinik Özet
                         </h4>
                         <p className="text-[11px] font-mono text-primary/80 leading-relaxed uppercase">
-                            Analysis of sequence ID {predictionId.substring(0, 8)} indicates{" "}
+                            Dizi ID'sinin analizi ({predictionId.substring(0, 8)}) {isMultimodal ? "çift" : "tek"} giriş vektörü üzerinden{" "}
                             {consensusType === "SUCCESS"
-                                ? "Strong Validation"
+                                ? "güçlü doğrulama"
                                 : consensusType === "MEDIUM"
-                                    ? "Moderate Correlation"
-                                    : "Inconclusive Signal"}{" "}
-                            across {isMultimodal ? "Dual" : "Single"} input vectors.
+                                    ? "orta dereceli korelasyon"
+                                    : "yetersiz sinyal"}{" "}
+                            gösteriyor.
                             {consensusType === "SUCCESS" &&
-                                ` High-certainty detection of ${consensusClass} confirmed.`}
+                                ` Yüksek kesinlikle ${tDisease(consensusClass)} tespiti onaylandı.`}
                             {consensusType === "MEDIUM" &&
-                                ` Probable detection of ${consensusClass}.`}
+                                ` Muhtemel ${tDisease(consensusClass)} tespiti.`}
                         </p>
                     </div>
                 </aside>

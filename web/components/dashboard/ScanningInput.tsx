@@ -35,7 +35,7 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                 <div className="flex items-center space-x-2">
                     <ScanLine className="h-5 w-5 text-primary" />
                     <h2 className="text-lg font-mono font-semibold text-foreground">
-                        Clinical Notes Input Vector
+                        Klinik Not Giriş Vektörü
                     </h2>
                 </div>
                 {/* Form header left side */}
@@ -47,31 +47,17 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                 <div className="flex-1 flex flex-col min-h-[250px]">
                     <div className="relative flex-1 flex flex-col">
                         <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3 block">
-                            Clinical Notes / Observations
+                            Klinik Notlar / Gözlemler
                         </span>
                         <textarea
                             className="flex-1 w-full min-h-[160px] resize-none bg-black/30 border border-border/50 font-mono text-sm text-foreground/90 placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary p-4"
-                            placeholder="Paste unstructured clinical notes here..."
+                            placeholder="Yapılandırılmamış klinik notları buraya yapıştırın..."
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             disabled={isLoading}
                         />
 
-                        {/* Laser Scan Animation overlay */}
-                        <AnimatePresence>
-                            {isLoading && (
-                                <motion.div
-                                    initial={{ top: "0%" }}
-                                    animate={{ top: "100%" }}
-                                    transition={{
-                                        duration: 1.5,
-                                        repeat: Infinity,
-                                        ease: "linear",
-                                    }}
-                                    className="absolute left-0 top-[28px] w-full h-[2px] bg-primary shadow-[0_0_10px_2px_rgba(0,240,255,0.5)] z-10 pointer-events-none"
-                                />
-                            )}
-                        </AnimatePresence>
+
                     </div>
 
                     <div className="mt-4 flex flex-row justify-end">
@@ -83,10 +69,10 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ANALYZING SEQUENCE...
+                                    DİZİ ANALİZ EDİLİYOR...
                                 </>
                             ) : (
-                                "INITIATE ANALYSIS [ENTER]"
+                                "ANALİZİ BAŞLAT [ENTER]"
                             )}
                         </Button>
                     </div>
@@ -95,7 +81,7 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                 {/* Right Column: Image Dropzone / Upload area */}
                 <div className="md:w-1/3 flex flex-col space-y-2">
                     <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">
-                        Fundus Scan (Ocular)
+                        Fundus Taraması (Oküler)
                     </span>
                     <input
                         type="file"
@@ -112,7 +98,7 @@ export function ScanningInput({ onSubmit, isLoading }: ScanningInputProps) {
                         >
                             <ImageIcon className="h-8 w-8 mb-2 opacity-80" />
                             <span className="font-mono text-sm uppercase font-bold tracking-widest text-center px-4">
-                                Click to Upload<br />Fundus Image
+                                Fundus Görseli Yüklemek<br />İçin Tıklayın
                             </span>
                         </div>
                     ) : (

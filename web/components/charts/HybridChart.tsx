@@ -14,6 +14,24 @@ import {
 } from "recharts";
 import { PredictionResult } from "@/services/api";
 
+const TR_DISEASE: Record<string, string> = {
+    "Normal": "Normal",
+    "Diabetes": "Diyabetik Retinopati",
+    "Diabetic Retinopathy": "Diyabetik Retinopati",
+    "Glaucoma": "Glokom",
+    "Cataract": "Katarakt",
+    "AMD": "Makula Dejenerasyonu",
+    "Macular Degeneration": "Makula Dejenerasyonu",
+    "Hypertension": "Hipertansiyon",
+    "Myopia": "Miyopi",
+    "Other": "Diğer",
+    "Conjunctivitis": "Konjonktivit",
+    "Dry Eye Syndrome": "Kuru Göz Sendromu",
+    "Retinal Detachment": "Retina Dekolmanı",
+    "Uveitis": "Üveit"
+};
+const tDisease = (d: string) => TR_DISEASE[d] || d;
+
 interface HybridChartProps {
     data?: PredictionResult[];
 }
@@ -27,10 +45,10 @@ export function HybridChart({ data = [] }: HybridChartProps) {
                     <BarChart className="h-10 w-10 text-muted-foreground/30" />
                 </div>
                 <h3 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
-                    Telemetry Inactive
+                    Telemetri Pasif
                 </h3>
                 <p className="text-[10px] text-muted-foreground mt-2 uppercase font-mono tracking-tighter">
-                    Waiting for pathology mapping vectors...
+                    Patoloji eşleme vektörleri bekleniyor...
                 </p>
             </div>
         );
@@ -38,7 +56,7 @@ export function HybridChart({ data = [] }: HybridChartProps) {
 
     // Radar data requires specific formatting
     const radarData = data.map((d) => ({
-        subject: d.class,
+        subject: tDisease(d.class).toUpperCase(),
         A: Math.round(d.probability * 100),
         fullMark: 100,
     }));
@@ -48,7 +66,7 @@ export function HybridChart({ data = [] }: HybridChartProps) {
         .sort((a, b) => b.probability - a.probability)
         .slice(0, 3)
         .map((d) => ({
-            name: d.class,
+            name: tDisease(d.class),
             prob: Math.round(d.probability * 100),
             fill: d.probability > 0.8 ? "#FF3333" : d.probability > 0.4 ? "#FFB020" : "#00F0FF",
         }));
@@ -58,7 +76,7 @@ export function HybridChart({ data = [] }: HybridChartProps) {
             {/* Radar Chart Section */}
             <div className="flex-1 bg-card border border-border/50 p-4 relative">
                 <h3 className="text-sm font-mono text-muted-foreground uppercase tracking-widest absolute top-4 left-4 z-10">
-                    Probability Matrix
+                    Olasılık Matrisi
                 </h3>
                 <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
@@ -68,7 +86,7 @@ export function HybridChart({ data = [] }: HybridChartProps) {
                             tick={{ fill: "#A1A1AA", fontSize: 10, fontFamily: "monospace" }}
                         />
                         <Radar
-                            name="Probability"
+                            name="Olasılık"
                             dataKey="A"
                             stroke="#00F0FF"
                             fill="#00F0FF"
@@ -85,7 +103,7 @@ export function HybridChart({ data = [] }: HybridChartProps) {
             {/* Top 3 Bar Chart Section */}
             <div className="w-full xl:w-96 bg-card border border-border/50 p-4 relative flex flex-col justify-center">
                 <h3 className="text-sm font-mono text-muted-foreground uppercase tracking-widest absolute top-4 left-4 z-10">
-                    Top 3 Diagnoses
+                    İlk 3 Teşhis
                 </h3>
                 <div className="mt-8 flex-1">
                     <ResponsiveContainer width="100%" height="100%">

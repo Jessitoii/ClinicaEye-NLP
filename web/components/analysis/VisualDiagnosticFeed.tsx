@@ -4,6 +4,24 @@ import { useState, useEffect } from "react";
 import { VisualHighlight } from "@/services/api";
 import { AlertCircle, Image as ImageIcon, Layers } from "lucide-react";
 
+const TR_DISEASE: Record<string, string> = {
+    "Normal": "Normal",
+    "Diabetes": "Diyabetik Retinopati",
+    "Diabetic Retinopathy": "Diyabetik Retinopati",
+    "Glaucoma": "Glokom",
+    "Cataract": "Katarakt",
+    "AMD": "Makula Dejenerasyonu",
+    "Macular Degeneration": "Makula Dejenerasyonu",
+    "Hypertension": "Hipertansiyon",
+    "Myopia": "Miyopi",
+    "Other": "Diğer",
+    "Conjunctivitis": "Konjonktivit",
+    "Dry Eye Syndrome": "Kuru Göz Sendromu",
+    "Retinal Detachment": "Retina Dekolmanı",
+    "Uveitis": "Üveit"
+};
+const tDisease = (d: string) => TR_DISEASE[d] || d;
+
 interface VisualDiagnosticFeedProps {
     imageUrl: string | null;
     highlights: VisualHighlight[];
@@ -37,7 +55,7 @@ export function VisualDiagnosticFeed({ imageUrl, highlights, className = "" }: V
             <div className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed border-border/40 bg-muted/10 ${className}`}>
                 <AlertCircle className="w-10 h-10 text-muted-foreground/30 mb-2" />
                 <p className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">
-                    {imgError ? "ASSET_ROUTING_FAILURE: Check Server Logs" : "NO_IMAGE_DATA_AVAILABLE"}
+                    {imgError ? "VARLIK YÖNLENDİRME HATASI: Sunucu Loglarını Kontrol Edin" : "GÖRSEL VERİSİ BULUNAMADI"}
                 </p>
             </div>
         );
@@ -51,7 +69,7 @@ export function VisualDiagnosticFeed({ imageUrl, highlights, className = "" }: V
                 {/* Base Fundus Image */}
                 <img
                     src={fullImageUrl!}
-                    alt="Patient Fundus"
+                    alt="Hasta Fundus"
                     className="absolute inset-0 w-full h-full object-contain"
                     onError={() => {
                         console.error(`[ASSET_ROUTING_VALIDATION] Failed to load image from: ${fullImageUrl}`);
@@ -75,7 +93,7 @@ export function VisualDiagnosticFeed({ imageUrl, highlights, className = "" }: V
                 {/* Overlays / UI */}
                 <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="bg-black/80 backdrop-blur-md border border-primary/30 p-2 text-[10px] font-mono text-primary uppercase">
-                        MODE: {currentHighlight ? `XAI_OVERLAY (${currentHighlight.disease_class})` : "NATIVE_VIEW"}
+                        MOD: {currentHighlight ? `XAI KATMANI (${tDisease(currentHighlight.disease_class)})` : "DOĞAL GÖRÜNÜM"}
                     </div>
                 </div>
             </div>
@@ -84,7 +102,7 @@ export function VisualDiagnosticFeed({ imageUrl, highlights, className = "" }: V
             <div className="bg-card border border-border/50 p-4 space-y-4">
                 <div className="flex items-center justify-between">
                     <label className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-2">
-                        <Layers className="w-3 h-3" /> Heatmap Intensity
+                        <Layers className="w-3 h-3" /> Isı Haritası Yoğunluğu
                     </label>
                     <span className="text-xs font-mono text-primary font-bold">{Math.round(opacity * 100)}%</span>
                 </div>
@@ -100,7 +118,7 @@ export function VisualDiagnosticFeed({ imageUrl, highlights, className = "" }: V
 
                 {highlights.length > 1 && (
                     <div className="space-y-2 pt-2 border-t border-border/30">
-                        <p className="text-[9px] font-mono text-muted-foreground uppercase">Diagnostic Layers</p>
+                        <p className="text-[9px] font-mono text-muted-foreground uppercase">Teşhis Katmanları</p>
                         <div className="flex flex-wrap gap-2">
                             {highlights.map((h, idx) => (
                                 <button
@@ -111,7 +129,7 @@ export function VisualDiagnosticFeed({ imageUrl, highlights, className = "" }: V
                                         : "border-border hover:border-primary/50 text-muted-foreground"
                                         }`}
                                 >
-                                    {h.disease_class}
+                                    {tDisease(h.disease_class)}
                                 </button>
                             ))}
                         </div>

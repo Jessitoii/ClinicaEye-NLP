@@ -57,14 +57,14 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground font-mono p-4">
             <div className="w-full max-w-md bg-card border border-border p-8 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-primary/20 animate-scan pointer-events-none" />
+
 
                 <div className="flex flex-col items-center mb-8">
                     <div className="p-3 border border-primary/50 mb-4">
                         <Activity className="h-8 w-8 text-primary" />
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tighter">CREDENTIAL_PROVISIONING</h1>
-                    <p className="text-xs text-muted-foreground mt-2 uppercase tracking-widest">Entry Registration Protocols</p>
+                    <h1 className="text-2xl font-bold tracking-tighter">KİMLİK BİLGİLERİ SAĞLAMA</h1>
+                    <p className="text-xs text-muted-foreground mt-2 uppercase tracking-widest">Kayıt Olun</p>
                 </div>
 
                 {error && (
@@ -76,7 +76,7 @@ export default function RegisterPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">Full Name [Display]</Label>
+                        <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">Tam Ad [Görünüm]</Label>
                         <Input
                             id="name"
                             type="text"
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">User Descriptor [Email]</Label>
+                        <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Kullanıcı E-posta</Label>
                         <Input
                             id="email"
                             type="email"
@@ -102,7 +102,7 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">Generate Secret [Password]</Label>
+                        <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">Parola Oluştur</Label>
                         <Input
                             id="password"
                             type="password"
@@ -122,23 +122,23 @@ export default function RegisterPage() {
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Provisioning...
+                                Sağlanıyor...
                             </>
                         ) : (
-                            "Initialize Profile"
+                            "Kayıt Ol"
                         )}
                     </Button>
                 </form>
 
                 <div className="mt-8 pt-6 border-t border-border/50 text-center">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
-                        Already registered on this node?
+                        Zaten kayıtlı mısınız?
                     </p>
                     <Link
                         href="/login"
                         className="text-xs text-primary hover:underline underline-offset-4 tracking-tighter font-bold"
                     >
-                        RETURN_TO_AUTH_GATE
+                        Giriş Yap
                     </Link>
                 </div>
             </div>

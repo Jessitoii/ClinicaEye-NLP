@@ -56,15 +56,14 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground font-mono p-4">
             <div className="w-full max-w-md bg-card border border-border p-8 shadow-2xl relative overflow-hidden">
-                {/* Aesthetic scanline overlay */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-primary/20 animate-scan pointer-events-none" />
+
 
                 <div className="flex flex-col items-center mb-8">
                     <div className="p-3 border border-primary/50 mb-4">
                         <Activity className="h-8 w-8 text-primary" />
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tighter">AUTHENTICATION_GATE</h1>
-                    <p className="text-xs text-muted-foreground mt-2 uppercase tracking-widest">Authorized Personnel Only</p>
+                    <h1 className="text-2xl font-bold tracking-tighter">KİMLİK DOĞRULAMA GEÇİDİ</h1>
+                    <p className="text-xs text-muted-foreground mt-2 uppercase tracking-widest">Giriş Yapın</p>
                 </div>
 
                 {error && (
@@ -76,7 +75,7 @@ export default function LoginPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">User Descriptor [Email]</Label>
+                        <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Kullanıcı E-posta</Label>
                         <Input
                             id="email"
                             type="email"
@@ -90,7 +89,7 @@ export default function LoginPage() {
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">Access Key [Password]</Label>
+                            <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">Parola</Label>
                         </div>
                         <Input
                             id="password"
@@ -111,29 +110,29 @@ export default function LoginPage() {
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Validating...
+                                Doğrulanıyor...
                             </>
                         ) : (
-                            "Authorize Access"
+                            "Giriş Yap"
                         )}
                     </Button>
                 </form>
 
                 <div className="mt-8 pt-6 border-t border-border/50 text-center">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-4">
-                        New node in the cluster?
+                        Hesabınız yok mu?
                     </p>
                     <Link
                         href="/register"
                         className="text-xs text-primary hover:underline underline-offset-4 tracking-tighter font-bold"
                     >
-                        REGISTER_NEW_CREDENTIALS
+                        KAYIT OL
                     </Link>
                 </div>
             </div>
 
             <p className="mt-8 text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-mono opacity-50">
-                ClinicaEye Secure Tunnel // Protocol V1.0
+                ClinicaEye Güvenli Tünel // Protokol V1.0
             </p>
         </div>
     );

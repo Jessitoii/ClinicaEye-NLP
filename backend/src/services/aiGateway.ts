@@ -134,10 +134,6 @@ export class AIGatewayService {
             if (axios.isAxiosError(error) && error.response?.status === 503) {
                 logger.warn({ inferenceTimeMs }, 'FastAPI returned 503: Vision weights offline. Degrading to NLP-only.');
 
-                // If it's a 503 but we have NLP data in the error response (depends on FastAPI implementation)
-                // Assuming we might need to retry with text-only or FastAPI returns partial success
-                // For now, if 503, we attempt to return what we can if available, otherwise mark OFFLINE
-
                 // Re-fetch NLP-only if possible or if error.response.data contains partial results
                 if (error.response.data?.data?.nlp_results) {
                     const raw = error.response.data;

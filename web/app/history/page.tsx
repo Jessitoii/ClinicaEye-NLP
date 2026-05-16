@@ -16,6 +16,24 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+const TR_DISEASE: Record<string, string> = {
+    "Normal": "Normal",
+    "Diabetes": "Diyabetik Retinopati",
+    "Diabetic Retinopathy": "Diyabetik Retinopati",
+    "Glaucoma": "Glokom",
+    "Cataract": "Katarakt",
+    "AMD": "Makula Dejenerasyonu",
+    "Macular Degeneration": "Makula Dejenerasyonu",
+    "Hypertension": "Hipertansiyon",
+    "Myopia": "Miyopi",
+    "Other": "Diğer",
+    "Conjunctivitis": "Konjonktivit",
+    "Dry Eye Syndrome": "Kuru Göz Sendromu",
+    "Retinal Detachment": "Retina Dekolmanı",
+    "Uveitis": "Üveit"
+};
+const tDisease = (d: string) => TR_DISEASE[d] || d;
+
 export default function HistoryPage() {
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +55,7 @@ export default function HistoryPage() {
                     </Button>
                     <History className="h-6 w-6 text-primary" />
                     <h1 className="text-xl font-bold font-mono tracking-wider text-white">
-                        PATIENT_ARCHIVE <span className="text-muted-foreground font-light">| ANALYSIS_HISTORY</span>
+                        HASTA ARŞİVİ <span className="text-muted-foreground font-light">| ANALİZ GEÇMİŞİ</span>
                     </h1>
                 </div>
             </header>
@@ -46,10 +64,10 @@ export default function HistoryPage() {
                 <div className="bg-card border border-border overflow-hidden">
                     <div className="p-4 border-b border-border/50 flex justify-between items-center">
                         <h3 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
-                            Ledger of Diagnostic Records
+                            Teşhis Kayıtları Defteri
                         </h3>
                         <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-1">
-                            {history.length} ENTRIES_DETECTED
+                            {history.length} KAYIT BULUNDU
                         </span>
                     </div>
 
@@ -57,15 +75,15 @@ export default function HistoryPage() {
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-20">
                                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                                <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Accessing Secure Vault...</p>
+                                <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Güvenli Kasaya Erişiliyor...</p>
                             </div>
                         ) : history.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <History className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                                <p className="text-sm font-mono text-muted-foreground">ARCHIVE_EMPTY: No previous records found.</p>
+                                <p className="text-sm font-mono text-muted-foreground">ARŞİV BOŞ: Önceki kayıt bulunamadı.</p>
                                 <Link href="/">
                                     <Button className="mt-4 rounded-none bg-primary text-primary-foreground hover:bg-primary/80">
-                                        START_NEW_ANALYSIS
+                                        YENİ ANALİZ BAŞLAT
                                     </Button>
                                 </Link>
                             </div>
@@ -73,10 +91,10 @@ export default function HistoryPage() {
                             <Table>
                                 <TableHeader className="bg-muted/50">
                                     <TableRow className="border-border hover:bg-transparent">
-                                        <TableHead className="font-mono text-xs uppercase text-muted-foreground">Record ID</TableHead>
-                                        <TableHead className="font-mono text-xs uppercase text-muted-foreground">Timestamp</TableHead>
-                                        <TableHead className="font-mono text-xs uppercase text-muted-foreground">Top Indicators</TableHead>
-                                        <TableHead className="text-right font-mono text-xs uppercase text-muted-foreground">Actions</TableHead>
+                                        <TableHead className="font-mono text-xs uppercase text-muted-foreground">Kayıt ID</TableHead>
+                                        <TableHead className="font-mono text-xs uppercase text-muted-foreground">Zaman Damgası</TableHead>
+                                        <TableHead className="font-mono text-xs uppercase text-muted-foreground">En Yüksek İşaretçiler</TableHead>
+                                        <TableHead className="text-right font-mono text-xs uppercase text-muted-foreground">İşlemler</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -101,11 +119,11 @@ export default function HistoryPage() {
                                                                         : "border-primary text-primary bg-primary/5"
                                                                 }`}
                                                         >
-                                                            {pred.class} ({Math.round(pred.probability * 100)}%)
+                                                            {tDisease(pred.class)} ({Math.round(pred.probability * 100)}%)
                                                         </Badge>
                                                     ))}
                                                     {item.predictions?.length > 2 && (
-                                                        <span className="text-[10px] text-muted-foreground font-mono">+{item.predictions.length - 2} MORE</span>
+                                                        <span className="text-[10px] text-muted-foreground font-mono">+{item.predictions.length - 2} DAHA</span>
                                                     )}
                                                 </div>
                                             </TableCell>
@@ -117,7 +135,7 @@ export default function HistoryPage() {
                                                         className="rounded-none font-mono text-[10px] text-primary hover:text-white hover:bg-primary transition-colors"
                                                     >
                                                         <ExternalLink className="h-3 w-3 mr-2" />
-                                                        VIEW_FULL_INTEL
+                                                        TÜM BİLGİLERİ GÖRÜNTÜLE
                                                     </Button>
                                                 </Link>
                                             </TableCell>

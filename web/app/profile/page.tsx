@@ -30,7 +30,7 @@ export default function ProfilePage() {
                     </Button>
                     <User className="h-6 w-6 text-primary" />
                     <h1 className="text-xl font-bold font-mono tracking-wider text-white">
-                        CLINICIAN_PROFILE <span className="text-muted-foreground font-light">| SYSTEM_STATS</span>
+                        KLİNİSYEN PROFİLİ <span className="text-muted-foreground font-light">| SİSTEM İSTATİSTİKLERİ</span>
                     </h1>
                 </div>
             </header>
@@ -38,7 +38,7 @@ export default function ProfilePage() {
             <div className="p-4 md:p-6 lg:p-8 max-w-[1200px] mx-auto w-full space-y-8">
                 {/* Profile Card */}
                 <Card className="rounded-none border-border bg-card shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-primary/20 animate-scan pointer-events-none" />
+
                     <CardHeader className="flex flex-row items-center space-x-4 pb-2">
                         <div className="p-4 border border-primary/50 bg-primary/5">
                             <User className="h-10 w-10 text-primary" />
@@ -49,7 +49,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="ml-auto flex items-center space-x-2 text-green-400 bg-green-400/10 px-3 py-1 border border-green-400/20">
                             <ShieldCheck className="h-4 w-4" />
-                            <span className="text-[10px] font-mono font-bold tracking-tighter">AUTHENTICATED_ACCESS</span>
+                            <span className="text-[10px] font-mono font-bold tracking-tighter">KİMLİĞİ DOĞRULANMIŞ ERİŞİM</span>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6 border-t border-border/40 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -57,16 +57,16 @@ export default function ProfilePage() {
                             <div className="flex items-center justify-between p-3 border border-border/50 bg-muted/20">
                                 <div className="flex items-center space-x-2">
                                     <Database className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-xs font-mono uppercase text-muted-foreground">Clinician ID</span>
+                                    <span className="text-xs font-mono uppercase text-muted-foreground">Klinisyen ID</span>
                                 </div>
                                 <span className="text-xs font-mono font-bold">{user?.id?.substring(0, 12)}...</span>
                             </div>
                             <div className="flex items-center justify-between p-3 border border-border/50 bg-muted/20">
                                 <div className="flex items-center space-x-2">
                                     <Clock className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-xs font-mono uppercase text-muted-foreground">Account Status</span>
+                                    <span className="text-xs font-mono uppercase text-muted-foreground">Hesap Durumu</span>
                                 </div>
-                                <span className="text-xs font-mono font-bold text-primary">PERSISTENT_ACTIVE</span>
+                                <span className="text-xs font-mono font-bold text-primary">KALICI AKTİF</span>
                             </div>
                         </div>
                         <div className="space-y-4">
@@ -74,7 +74,7 @@ export default function ProfilePage() {
                             <div className="flex items-center justify-between p-3 border border-border/50 bg-primary/5 border-primary/20">
                                 <div className="flex items-center space-x-2">
                                     <BarChart3 className="h-4 w-4 text-primary" />
-                                    <span className="text-xs font-mono uppercase text-primary">Analyses Completed</span>
+                                    <span className="text-xs font-mono uppercase text-primary">Tamamlanan Analizler</span>
                                 </div>
                                 <span className="text-xl font-mono font-bold text-primary">
                                     {isLoading ? "..." : totalAnalyses.toString().padStart(3, '0')}
@@ -88,34 +88,34 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="rounded-none border-border bg-card">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">Inference Engine</CardTitle>
+                            <CardTitle className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">Çıkarım Motoru</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold font-mono">NLP_CORE_V1</div>
+                            <div className="text-xl font-bold font-mono">NLP CORE V1</div>
                             <p className="text-[10px] text-muted-foreground mt-1 uppercase font-mono tracking-tighter opacity-70">
-                                BioBERT_MultiLabel_Architecture
+                                BioBERT MultiLabel Mimarisi
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card className="rounded-none border-border bg-card">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">Processing Latency</CardTitle>
+                            <CardTitle className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">İşlem Gecikmesi</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-xl font-bold font-mono text-green-400">&lt; 2.0s</div>
                             <p className="text-[10px] text-muted-foreground mt-1 uppercase font-mono tracking-tighter opacity-70">
-                                Real-time Analysis Throughput
+                                Gerçek Zamanlı Analiz Verimi
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card className="rounded-none border-border bg-card">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">Security Protocol</CardTitle>
+                            <CardTitle className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">Güvenlik Protokolü</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold font-mono">HIPAA_OAUTH2</div>
+                            <div className="text-xl font-bold font-mono">HIPAA OAUTH2</div>
                             <p className="text-[10px] text-muted-foreground mt-1 uppercase font-mono tracking-tighter opacity-70">
                                 End-to-End Encryption [JWT]
                             </p>

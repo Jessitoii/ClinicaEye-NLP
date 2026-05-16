@@ -25,7 +25,7 @@ export const EvidenceHeatmap: React.FC<EvidenceHeatmapProps> = ({ text, explanat
     if (!text) {
         return (
             <div className="h-48 flex items-center justify-center border border-dashed border-primary/20 bg-muted/5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                ERR_NO_DATA: Input sequence empty.
+                HATA_VERİ_YOK: Giriş dizisi boş.
             </div>
         );
     }
@@ -50,18 +50,17 @@ export const EvidenceHeatmap: React.FC<EvidenceHeatmapProps> = ({ text, explanat
 
     return (
         <section className="bg-[#050505] border border-border/40 p-6 shadow-2xl relative overflow-hidden group">
-            {/* Mission Control Scanning Aesthetic */}
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-primary/30 animate-scan pointer-events-none z-10" />
+
             
             <header className="flex justify-between items-center mb-6 border-b border-primary/10 pb-2">
                 <div className="flex items-center space-x-2">
                     <span className="h-2 w-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
                     <h3 className="text-[10px] font-mono font-bold text-primary uppercase tracking-[0.25em]">
-                        Evidence_Attribution_Heatmap
+                        Kanıt Atıf Isı Haritası
                     </h3>
                 </div>
                 <div className="text-[8px] font-mono text-muted-foreground uppercase opacity-50">
-                    Neural_Response: Validated
+                    Nöral Yanıt: Doğrulandı
                 </div>
             </header>
 
@@ -82,11 +81,11 @@ export const EvidenceHeatmap: React.FC<EvidenceHeatmapProps> = ({ text, explanat
             {/* Bottom Info Bar */}
             <footer className="mt-8 pt-4 border-t border-border/20 flex justify-between items-center">
                 <div className="flex space-x-4 text-[8px] font-mono uppercase text-muted-foreground">
-                    <span>Alpha: BioBERT_XAI</span>
-                    <span>Tokens: {tokens.length}</span>
+                    <span>Alfa: BioBERT XAI</span>
+                    <span>Belirteçler: {tokens.length}</span>
                 </div>
                 <div className="text-[8px] font-mono text-primary/60">
-                    {explanations.length > 0 ? "STREAM_SYNCHRONIZED" : "ATTRIBUTIONS_MISSING"}
+                    {explanations.length > 0 ? "AKIŞ SENKRONİZE" : "ATIFLAR EKSİK"}
                 </div>
             </footer>
         </section>
@@ -145,12 +144,12 @@ const HeatmapToken: React.FC<HeatmapTokenProps> = ({ token, importance }) => {
                             
                             <div className="flex flex-col space-y-1">
                                 <div className="flex justify-between items-center border-b border-primary/20 pb-1">
-                                    <span className="text-primary font-bold uppercase tracking-widest text-[7px]">Attribution</span>
-                                    <span className="text-white/[0.5] font-mono text-[7px]">VECTOR</span>
+                                    <span className="text-primary font-bold uppercase tracking-widest text-[7px]">Atıf</span>
+                                    <span className="text-white/[0.5] font-mono text-[7px]">VEKTÖR</span>
                                 </div>
                                 <div className="text-white font-mono text-[9px] leading-tight">
-                                    <p>Raw: {importance.toFixed(4)}</p>
-                                    <p className="text-primary font-bold">Heat: {amplifiedScore.toFixed(3)}</p>
+                                    <p>Ham: {importance.toFixed(4)}</p>
+                                    <p className="text-primary font-bold">Isı: {amplifiedScore.toFixed(3)}</p>
                                 </div>
                             </div>
                         </div>

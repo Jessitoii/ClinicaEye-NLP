@@ -9,6 +9,24 @@ import {
     Tooltip,
 } from "recharts";
 import { PredictionResult } from "@/services/api";
+
+const TR_DISEASE: Record<string, string> = {
+    "Normal": "Normal",
+    "Diabetes": "Diyabetik Retinopati",
+    "Diabetic Retinopathy": "Diyabetik Retinopati",
+    "Glaucoma": "Glokom",
+    "Cataract": "Katarakt",
+    "AMD": "Makula Dejenerasyonu",
+    "Macular Degeneration": "Makula Dejenerasyonu",
+    "Hypertension": "Hipertansiyon",
+    "Myopia": "Miyopi",
+    "Other": "Diğer",
+    "Conjunctivitis": "Konjonktivit",
+    "Dry Eye Syndrome": "Kuru Göz Sendromu",
+    "Retinal Detachment": "Retina Dekolmanı",
+    "Uveitis": "Üveit"
+};
+const tDisease = (d: string) => TR_DISEASE[d] || d;
 import { useMemo } from "react";
 
 interface DualRadarChartProps {
@@ -23,7 +41,7 @@ export function DualRadarChart({ nlpData = [], visionData = [] }: DualRadarChart
         return nlpData.map((nlpItem, index) => {
             const visionItem = visionData?.[index];
             return {
-                subject: nlpItem.class.toUpperCase(),
+                subject: tDisease(nlpItem.class).toUpperCase(),
                 NLP: Math.round(nlpItem.probability * 100),
                 Vision: visionItem ? Math.round(visionItem.probability * 100) : 0,
                 fullMark: 100,
@@ -37,16 +55,16 @@ export function DualRadarChart({ nlpData = [], visionData = [] }: DualRadarChart
         <div className="w-full h-[450px] relative bg-card border border-border/50 p-6 flex flex-col">
             <header className="flex justify-between items-start mb-4">
                 <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                    DUAL_MODEL_SPECTRUM
+                    ÇİFT MODEL SPEKTRUMU
                 </h3>
                 <div className="flex gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#00F0FF]" />
-                        <span className="text-[10px] font-mono text-muted-foreground uppercase">NLP_CONFIDENCE</span>
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">NLP GÜVENİ</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#FFB020]" />
-                        <span className="text-[10px] font-mono text-muted-foreground uppercase">VISION_CONFIDENCE</span>
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">GÖRSEL GÜVENİ</span>
                     </div>
                 </div>
             </header>
@@ -59,14 +77,14 @@ export function DualRadarChart({ nlpData = [], visionData = [] }: DualRadarChart
                         tick={{ fill: "#A1A1AA", fontSize: 11, fontFamily: "monospace", width: 120 }}
                     />
                     <Radar
-                        name="NLP Analysis"
+                        name="NLP Analizi"
                         dataKey="NLP"
                         stroke="#00F0FF"
                         fill="#00F0FF"
                         fillOpacity={0.2}
                     />
                     <Radar
-                        name="Vision Analysis"
+                        name="Görsel Analiz"
                         dataKey="Vision"
                         stroke="#FFB020"
                         fill="#FFB020"
