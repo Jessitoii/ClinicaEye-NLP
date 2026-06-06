@@ -13,9 +13,13 @@ import uvicorn
 from transformers import AutoTokenizer, BertForSequenceClassification
 import torchvision.models as models
 from torchvision import transforms
+from deep_translator import GoogleTranslator
+from langdetect import detect
 
 from scripts.train_pipeline import XAIExplainer
 from scripts.preprocess_fundus import preprocess_image, VisionExplainer
+
+translator = GoogleTranslator(source='tr', target='en')
 
 # No Sugarcoating: Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -45,6 +49,54 @@ ABBREVIATIONS = {
     r"\bcataract\w*\b": "cataract",
     r"\bconjunctivitis\w*\b": "conjunctivitis",
     r"\buveitis\w*\b": "uveitis"
+}
+
+TRANSLATION_CORRECTIONS = {
+    # Cataract
+    r"\bincreasing blurred vision\b": "progressively increasing blurred vision",
+    r"\bring-shaped images\b": "halos",
+    r"\brings around lights\b": "halos",
+    r"\bdecreased night vision\b": "reduced night vision",
+    r"\bpoor night vision\b": "reduced night vision",
+    r"\btrouble seeing at night\b": "reduced night vision",
+    r"\bfainter\b": "faded",
+    r"\bwashed out colors\b": "faded colors",
+    r"\bchange of glasses prescription\b": "changes in eyeglass prescription",
+    r"\bneed to blink frequently\b": "frequent need to blink",
+    r"\bseeing glare\b": "glare",
+    r"\bcloudy vision\b": "blurred vision",
+    r"\bfoggy vision\b": "blurred vision",
+    r"\b1 year\b": "one year",
+    
+    # Glaucoma
+    r"\bside vision loss\b": "peripheral vision loss",
+    r"\btunnel vision\b": "peripheral vision loss",
+    r"\beye pressure\b": "intraocular pressure",
+    
+    # Macular Degeneration
+    r"\bblind spot in the middle\b": "central vision loss",
+    r"\bcenter vision loss\b": "central vision loss",
+    r"\bwavy lines\b": "distorted vision",
+    r"\bcrooked lines\b": "distorted vision",
+    
+    # Retinal Detachment
+    r"\bfalling curtain\b": "curtain over vision",
+    r"\bdark curtain\b": "curtain over vision",
+    r"\bflashes of light\b": "photopsia",
+    r"\bfloating spots\b": "floaters",
+    r"\bflying flies\b": "floaters",
+    
+    # Diabetic Retinopathy
+    r"\bdark spots\b": "scotoma",
+    r"\bempty spots\b": "scotoma",
+    
+    # Dry Eye & Conjunctivitis
+    r"\bsandy feeling\b": "foreign body sensation",
+    r"\bgritty feeling\b": "foreign body sensation",
+    r"\bpink eye\b": "conjunctival injection",
+    r"\bwatery eyes\b": "tearing",
+    r"\beye discharge\b": "purulent discharge",
+    r"\beye crust\b": "purulent discharge"
 }
 
 # ----------------- PATHS -----------------
@@ -116,6 +168,8 @@ def clean_text(text: str) -> str:
     
     text = text.lower()
     text = re.sub(r'[^a-z0-9\s\.\-]', ' ', text)
+    for pattern, replacement in TRANSLATION_CORRECTIONS.items():
+        text = re.sub(pattern, replacement, text)
     for pattern, replacement in ABBREVIATIONS.items():
         text = re.sub(pattern, replacement, text)
     text = re.sub(r'\s+', ' ', text).strip()
@@ -166,7 +220,17 @@ async def analyze(
             raise HTTPException(status_code=503, detail="NLP_MODEL_WEIGHTS_NOT_FOUND")
             
         try:
-            cleaned = clean_text(text)
+            processed_text = text
+            try:
+                lang_detected = detect(text)
+                if lang_detected == 'tr':
+                    logger.info("Turkish text detected. Translating to English...")
+                    processed_text = translator.translate(text)
+                    logger.info(f"Translated text: {processed_text}")
+            except Exception as e:
+                logger.warning(f"Translation failed: {e}")
+
+            cleaned = clean_text(processed_text)
             inputs = nlp_tokenizer(cleaned, return_tensors="pt", truncation=True, max_length=512, padding=True).to(device)
             
             with torch.no_grad():

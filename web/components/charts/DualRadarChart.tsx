@@ -55,7 +55,7 @@ export function DualRadarChart({ nlpData = [], visionData = [] }: DualRadarChart
         <div className="w-full h-[450px] relative bg-card border border-border/50 p-6 flex flex-col">
             <header className="flex justify-between items-start mb-4">
                 <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                    ÇİFT MODEL SPEKTRUMU
+                    RADAR GRAFİĞİ
                 </h3>
                 <div className="flex gap-4">
                     <div className="flex items-center gap-2">

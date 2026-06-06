@@ -4,7 +4,7 @@ import fs from 'fs';
 import { logger } from '../utils/logger';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000/api/v1';
-const AI_TIMEOUT_MS = 30000; // Increased to 30s to allow for deep learning inference & XAI
+const AI_TIMEOUT_MS = 60000; // Increased to 60s to allow for deep learning inference & XAI
 
 export interface AIResponse {
     nlp: {

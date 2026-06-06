@@ -17,3 +17,5 @@ scikit-learn
 # XAI & Vision: explainability and image processing
 captum
 opencv-python-headless
+deep-translator
+langdetect
