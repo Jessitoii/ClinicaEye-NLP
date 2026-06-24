@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+npm-debug.log
+*.log
+tsc_error.txt
+.git/
+.gitignore
+.dockerignore

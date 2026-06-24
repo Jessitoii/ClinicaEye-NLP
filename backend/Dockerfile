@@ -6,8 +6,10 @@ WORKDIR /app
 
 # Enable Playwright headless running dependencies
 # It is CRITICAL to include this exact installation to prevent Linux library errors in Chrome
-RUN npm install -g pnpm && \
-    npx playwright install --with-deps chromium
+RUN apt-get update && apt-get install -y curl && \
+    npm install -g pnpm && \
+    npx playwright install --with-deps chromium && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy package files (package.json and package-lock.json if available)
 COPY package*.json ./
